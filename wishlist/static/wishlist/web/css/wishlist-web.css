@@ -292,7 +292,15 @@ input, select, textarea {
 }
 
 /* 위시리스트 전체 포스트 부분 */
-/* 위시리스트 설명 부분 */
+
+.bold-border {
+    border-left-width: 5px;
+    border-right-width: 5px;
+    border-top-width: 5px;
+    border-bottom-width: 5px;
+}
+
+
 .explain-wrap {
     border-width: 1px;
     border-radius: 0.375rem;

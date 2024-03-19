@@ -48,7 +48,7 @@ class WishListWriteAPI(APIView):
         return Response('success')
 
 
-# 위시리스트 리스트 보여주기
+# 위시리스트 리스트
 class WishListAPI(APIView):
     def get(self, request, page):
         # id 검사
@@ -60,8 +60,7 @@ class WishListAPI(APIView):
             else:
                 id = None
 
-        # 위시리스트
-        # 페이지당 3개의 게시물 보여주기
+        # 페이지 제한 및 필터 적용
         row_count = 3
         offset = (page - 1) * row_count
         limit = page * row_count
@@ -74,7 +73,6 @@ class WishListAPI(APIView):
             condition &= Q(category_id=category)
         if keyword != '없음':
             condition &= Q(wishlisttag__tag_name__contains=keyword)
-
         # print(condition)
 
         columns = [
@@ -102,7 +100,7 @@ class WishListAPI(APIView):
             like_total=Count('wishlistlike__id', filter=Q(wishlistlike__status=1)),
             reply_total=Count('wishlistreply__id', filter=Q(wishlistreply__status=1))
 
-        ).values(*columns).order_by('-created_date')[offset:limit]
+        ).values(*columns).order_by('-id')[offset:limit]
 
         # 마이페이지에서 넘어왔을 경우
         my_wishlist_id = request.GET.get('wishlist-id', 0)
@@ -131,7 +129,8 @@ class WishListAPI(APIView):
 
         data = {
             'wishlists': wishlists,
-            'tags': tag_info_by_wishlist
+            'tags': tag_info_by_wishlist,
+            'my_wishlist': my_wishlist_id
         }
 
         return Response(data)
@@ -150,9 +149,9 @@ class WishListActionAPI(APIView):
     def patch(self, request, wishlist_id):
         datas = request.data
         # print(datas)
+        # 위시리스트 정보 처리
         new_wishlist = datas.get('new_wishlist')
         # print(new_wishlist)
-        # new_wishlist_id = new_wishlist.get('wishlist_id')
         # print(new_wishlist_id)
         new_wishlist_content = new_wishlist.get('wishlist_content')
         new_category_id = new_wishlist.get('category_id')
@@ -171,8 +170,12 @@ class WishListActionAPI(APIView):
         new_tag_name = new_wishlist.get('tag_name')
         # print(new_tag_name)
         for tag_name in new_tag_name:
-            WishlistTag.objects.get_or_create(wishlist_id=wishlist_id, tag_name=tag_name)
+            wishlist_update_object,checked = WishlistTag.objects.get_or_create(wishlist_id=wishlist_id, tag_name=tag_name)
             # print(tag_name)
+        #
+        # if checked is False:
+        #     WishlistTag.objects.filter(wishlist_id=wishlist_id).update(status=0)
+
 
         return Response('success')
 
@@ -186,12 +189,12 @@ class ReplyWriteAPI(APIView):
             'wishlist_id': data['wishlist_id'],
             'member_id': request.session['member']['id']
         }
-
+        print(data['wishlist_id'])
         WishlistReply.objects.create(**data)
         return Response('success')
 
 
-# 댓글 리스트 보여주기
+# 댓글 리스트
 class ReplyListAPI(APIView):
     def get(self, request):
         wishlist_id = request.GET.get('id')
@@ -242,6 +245,7 @@ class ReplyActionAPI(APIView):
         return Response(new_reply)
 
 
+# 위시리스트 게시글 좋아요
 class WishlistLikeAPIView(APIView):
     @transaction.atomic
     def get(self, request, wishlist_id, memberId, displayStyle):

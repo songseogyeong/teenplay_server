@@ -177,13 +177,6 @@ deleteButclosed.addEventListener("click", async (e) =>{
 })
 
 
-
-
-
-
-// "add all" 버튼 클릭 이벤트 처리
-
-
 wishlistService.getList(member_id, page, status_wishlist, showList).then((text) => {
     tbody.innerHTML += text;
 });
@@ -230,37 +223,3 @@ function timeForToday(datetime) {
 
     return `${gap}년 전`;
 }
-//
-// // 삭제하기 클릭 시 해당 목록 선택하는 이벤트
-// const wishlistRemoveBtns = document.querySelectorAll(".wishlist-remove");
-// const deleteModalwrap = document.querySelector(".delete-modal-wrap");
-// let deleteTarget;
-//
-// wishlistRemoveBtns.forEach((wishlistRemoveBtn) => {
-//     wishlistRemoveBtn.addEventListener("click", (e) => {
-//         deleteModalwrap.querySelector(".check-svg-box").style.display = "none";
-//         deleteModalwrap.querySelector(".delete-modal-container").style.animation = "popUp 0.5s";
-//         deleteModalwrap.style.display = "block";
-//         deleteTarget = wishlistRemoveBtn;
-//     });
-// });
-//
-// // 모달내 닫기 및 확인 버튼 클릭 시 이벤트
-// const closeBtns = deleteModalwrap.querySelectorAll("button");
-//
-// closeBtns.forEach((closeBtn) => {
-//     closeBtn.addEventListener("click", (e) => {
-//         if (e.target.className == "check-btn") {
-//             deleteModalwrap.querySelector(".delete-modal-container").style.animation = "popDown 0.5s";
-//             setTimeout(() => {
-//                 deleteModalwrap.style.display = "none";
-//                 deleteTarget.closest(".wishlist-details").remove();
-//             }, 450);
-//         } else {
-//             deleteModalwrap.querySelector(".delete-modal-container").style.animation = "popDown 0.5s";
-//             setTimeout(() => {
-//                 deleteModalwrap.style.display = "none";
-//             }, 450);
-//         }
-//     });
-// });

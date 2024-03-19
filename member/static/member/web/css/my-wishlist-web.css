@@ -619,3 +619,7 @@ a.disabled, a:disabled, button.disabled, button:disabled {
     --tw-bg-opacity: 1;
     background-color: #9F0D08;
 }
+
+.wishlist-text {
+    cursor: pointer;
+}
