@@ -1096,10 +1096,8 @@ input::placeholder {
 }
 
 .img-form-skip {
-    text-decoration-line: underline;
     --tw-text-opacity: 1;
     color: rgb(135 141 145/var(--tw-text-opacity));
-    cursor: pointer;
 }
 
 .img-form-img-wrap {

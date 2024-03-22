@@ -25,12 +25,16 @@ from wishlist.models import Wishlist, WishlistReply, WishlistTag
 
 # 관리자 로그인 페이지 이동
 class AdminLoginView(View):
+    # 관리자 로그인 페이지 이동
     def get(self, request):
         return render(request, 'admin/web/admin-login-web.html')
 
     def post(self, request):
+        # 응답받은 데이터를 data 변수로 선언
         data = request.POST
 
+        # 응답받은 각각의 데이터 값을 각 key에 담아 dict 객체로 만들기
+        # dict 객체는 data 변수에 담기
         data = {
             'admin_id': data['admin_id'],
             'admin_password': data['admin_password']

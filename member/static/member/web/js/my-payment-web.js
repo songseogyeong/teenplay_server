@@ -80,113 +80,113 @@ const showList =(pay) =>{
     if (pay.length ===0){
         text +=
             `<div class="nontext">아직 새로운 결제내역이 없습니다.</div>`
-    }
-    else {
-    pay.forEach((pay)=>{
-        const activityEndDate = new Date(pay.activity__recruit_end);
-        const currentDate = new Date();
-        if (activityEndDate >= currentDate && pay.activity__thumbnail_path === ""){
-        text += `
-                <div class="payment-activity-box">
-                    <div class="payment-activity-items">
-                        <div class="payment-activity-details">
-                            <div class="payment-activity-inside">
-                                <div class="payment-activity-thumbnail-wrap">
-                                    <div class="payment-activity-thumbnail-container">
-                                        <!-- 해당 활동 상세보기 주소 필요 -->
-                                        <a href="http://127.0.0.1:10000/member/activity/?activity_id=${pay.activity__id}" target="_blank">
-                                            <!-- 해당 활동의 썸네일 경로 필요 -->
-                                            <img class="payment-activity-thumbnail" src="/static/public/web/images/logo/logo8.png" />
-                                        </a>
+    } else {
+        pay.forEach((pay)=>{
+            const activityEndDate = new Date(pay.activity__recruit_end);
+            const currentDate = new Date();
+            if (activityEndDate >= currentDate && pay.activity__thumbnail_path === ""){
+            text += `
+                    <div class="payment-activity-box">
+                        <div class="payment-activity-items">
+                            <div class="payment-activity-details">
+                                <div class="payment-activity-inside">
+                                    <div class="payment-activity-thumbnail-wrap">
+                                        <div class="payment-activity-thumbnail-container">
+                                            <!-- 해당 활동 상세보기 주소 필요 -->
+                                            <a href="http://127.0.0.1:10000/member/activity/?activity_id=${pay.activity__id}" target="_blank">
+                                                <!-- 해당 활동의 썸네일 경로 필요 -->
+                                                <img class="payment-activity-thumbnail" src="/static/public/web/images/logo/logo8.png" />
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="club-activity-content">
+                                        <div class="club-name-time">
+                                            <div class="club-name-box">
+                                                <span>${pay.activity__club__club_name}</span>
+                                            </div>
+                                            <div class="open-time-box">
+                                                <div class="open-time">결제일${changeDate(pay.created_date)}</div>
+                                            </div>
+                                        </div>
+                                        <div class="payment-activity-info">
+                                            <div class="payment-activity-title">${pay.activity__activity_title}.</div>
+                                            <div class="payment-activity-oneline-info">
+                                                <span>${pay.activity__activity_intro}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="club-activity-content">
-                                    <div class="club-name-time">
-                                        <div class="club-name-box">
-                                            <span>${pay.activity__club__club_name}</span>
+                            </div>
+                            <div class="payment-info-box">
+                                <div class="payment-info-inside">
+                                    <div class="payment-info">
+                                        <div class="payment-amount-title">결제 금액</div>
+                                        <div class="payment-amount-box">
+                                            <div>20,000원</div>
                                         </div>
-                                        <div class="open-time-box">
-                                            <div class="open-time">결제일${changeDate(pay.created_date)}</div>
-                                        </div>
-                                    </div>
-                                    <div class="payment-activity-info">
-                                        <div class="payment-activity-title">${pay.activity__activity_title}.</div>
-                                        <div class="payment-activity-oneline-info">
-                                            <span>${pay.activity__activity_intro}</span>
+                                        <div class="payment-cancle-box">
+                                            <!-- 활동 결제 취소하면 어케하지?  -->
+                                            <button class="payment-cancle ${pay.id}" type="button">결제 취소</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="payment-info-box">
-                            <div class="payment-info-inside">
-                                <div class="payment-info">
-                                    <div class="payment-amount-title">결제 금액</div>
-                                    <div class="payment-amount-box">
-                                        <div>20,000원</div>
-                                    </div>
-                                    <div class="payment-cancle-box">
-                                        <!-- 활동 결제 취소하면 어케하지?  -->
-                                        <button class="payment-cancle ${pay.id}" type="button">결제 취소</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>`
-    }else if (activityEndDate >= currentDate && pay.activity__thumbnail_path !== ""){
-        text += `
-                <div class="payment-activity-box">
-                    <div class="payment-activity-items">
-                        <div class="payment-activity-details">
-                            <div class="payment-activity-inside">
-                                <div class="payment-activity-thumbnail-wrap">
-                                    <div class="payment-activity-thumbnail-container">
-                                        <!-- 해당 활동 상세보기 주소 필요 -->
-                                        <a href="http://127.0.0.1:10000/member/activity/?activity_id=${pay.activity__id}" target="_blank">
-                                            <!-- 해당 활동의 썸네일 경로 필요 -->
-                                            <img class="payment-activity-thumbnail" src="/upload/${pay.activity__thumbnail_path}" />
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="club-activity-content">
-                                    <div class="club-name-time">
-                                        <div class="club-name-box">
-                                            <span>${pay.activity__club__club_name}</span>
+                    </div>`
+            }else {
+                text += `
+                        <div class="payment-activity-box">
+                            <div class="payment-activity-items">
+                                <div class="payment-activity-details">
+                                    <div class="payment-activity-inside">
+                                        <div class="payment-activity-thumbnail-wrap">
+                                            <div class="payment-activity-thumbnail-container">
+                                                <!-- 해당 활동 상세보기 주소 필요 -->
+                                                <a href="http://127.0.0.1:10000/member/activity/?activity_id=${pay.activity__id}" target="_blank">
+                                                    <!-- 해당 활동의 썸네일 경로 필요 -->
+                                                    <img class="payment-activity-thumbnail" src="/upload/${pay.activity__thumbnail_path}" />
+                                                </a>
+                                            </div>
                                         </div>
-                                        <div class="open-time-box">
-                                            <div class="open-time">결제일${changeDate(pay.created_date)}</div>
-                                        </div>
-                                    </div>
-                                    <div class="payment-activity-info">
-                                        <div class="payment-activity-title">${pay.activity__activity_title}.</div>
-                                        <div class="payment-activity-oneline-info">
-                                            <span>${pay.activity__activity_intro}</span>
+                                        <div class="club-activity-content">
+                                            <div class="club-name-time">
+                                                <div class="club-name-box">
+                                                    <span>${pay.activity__club__club_name}</span>
+                                                </div>
+                                                <div class="open-time-box">
+                                                    <div class="open-time">결제일${changeDate(pay.created_date)}</div>
+                                                </div>
+                                            </div>
+                                            <div class="payment-activity-info">
+                                                <div class="payment-activity-title">${pay.activity__activity_title}.</div>
+                                                <div class="payment-activity-oneline-info">
+                                                    <span>${pay.activity__activity_intro}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="payment-info-box">
-                            <div class="payment-info-inside">
-                                <div class="payment-info">
-                                    <div class="payment-amount-title">결제 금액</div>
-                                    <div class="payment-amount-box">
-                                        <div>20,000원</div>
-                                    </div>
-                                    <div class="payment-cancle-box">
-                                        <!-- 활동 결제 취소하면 어케하지?  -->
-                                        <button class="payment-cancle ${pay.id}" type="button">결제 취소</button>
+                                <div class="payment-info-box">
+                                    <div class="payment-info-inside">
+                                        <div class="payment-info">
+                                            <div class="payment-amount-title">결제 금액</div>
+                                            <div class="payment-amount-box">
+                                                <div>20,000원</div>
+                                            </div>
+                                            <div class="payment-cancle-box">
+                                                <!-- 활동 결제 취소하면 어케하지?  -->
+                                                <button class="payment-cancle ${pay.id}" type="button">결제 취소</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>`
-    }
+                        </div>`
+            }
 
-    })
-}return text;
+        })
+    }
+    return text;
 }
 
 payshow.addEventListener("click", async(e)=>{
@@ -208,6 +208,7 @@ payshow.addEventListener("click", async(e)=>{
 })
 
 cansleButton.addEventListener("click", (e) => {
+    console.log(e.target)
     payService.getList(member_id, ++page, showList).then((text) => {
         payshow.innerHTML += text;
     });
