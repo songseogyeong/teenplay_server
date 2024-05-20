@@ -40,7 +40,7 @@ class Member(Period):
     member_keyword2 = models.TextField(null=True)
     member_keyword3 = models.TextField(null=True)
     # 메인페이지 추천활동 관련 ai 모델 필드
-    member_recommended_activity_model = models.ImageField(upload_to='ai/%Y/%m/%d', null=True)
+    member_recommended_activity_model = models.TextField(null=True)
 
     objects = models.Manager()
     enabled_objects = MemberManager()

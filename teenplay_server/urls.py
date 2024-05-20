@@ -45,6 +45,8 @@ class IntConverter:
 
 
 urlpatterns = [
+    # ai 서비스
+    path('ai/api/', include('ai.urls')),
     # path('admin/', admin.site.urls),
     path('club/', include('club.urls-web')),
     path('clubs/', include('club.urls-web')),
@@ -56,6 +58,7 @@ urlpatterns = [
     path('oauth/', include('oauth.urls')),
     path('teenplay/', include('teenplay.urls-web')),
     path('app/teenplay/', include('teenplay.urls-app')),
+    path('notice/', include('notice.urls-web')),
     path('notice/', include('notice.urls-web')),
     path('app/notice/', include('notice.urls-app')),
     path('festival/', include('festival.urls-web')),

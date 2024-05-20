@@ -36,6 +36,7 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '3.36.49.16', 'teenplay.online']
 # Application definition
 
 INSTALLED_APPS = [
+    'ai',
     'main',
     'oauth',
     'search',

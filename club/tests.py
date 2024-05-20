@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from activity.models import Activity
-from club.models import Club, ClubMember, ClubPostReply, ClubPost
+from club.models import Club, ClubMember, ClubPostReply
 from member.models import Member
 from pay.models import Pay
 from teenplay_server.category import Category
@@ -39,8 +39,8 @@ class ClubTestCase(TestCase):
 
     # print(club)
 
-    member = Member.objects.get(id=8)
-    print(member)
+    # member = Member.objects.get(id=8)
+    # print(member)
     # club_member = ClubMember.objects.filter(member=member)
     #
     # if club_member.exists():
@@ -89,3 +89,7 @@ class ClubTestCase(TestCase):
     # print(finished_activities)
 
     # ClubPostReply.objects.create(reply_content='모임 홍보글 댓글 테스트 내용8', club_post_id=1, member_id=2)
+
+
+    pass
+

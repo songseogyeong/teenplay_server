@@ -147,6 +147,15 @@
                                         {% endfor %}
                                         </div>
                                     </div>
+                                    <!-- 관심 키워드 입력 칸 -->
+                                    <div class="keyword-input-wrap">
+                                        <span class="modify-target-title"> 관심 키워드 (최대 10글자) </span>
+                                        <div class="keyword-input-container">
+                                            <input type="text" placeholder="키워드 1" name="keyword1" id="keyword1" class="keyword-input" value="{{ member.member_keyword1 }}" maxlength="10">
+                                            <input type="text" placeholder="키워드 2" name="keyword2" id="keyword2" class="keyword-input" value="{{ member.member_keyword2 }}" maxlength="10">
+                                            <input type="text" placeholder="키워드 3" name="keyword3" id="keyword3" class="keyword-input" value="{{ member.member_keyword3 }}" maxlength="10">
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="sub-info-modify">
                                     <div class="sub-info-title">부가 정보</div>
