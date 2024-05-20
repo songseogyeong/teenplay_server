@@ -11,11 +11,12 @@ from rest_framework.views import APIView
 
 from activity.models import Activity, ActivityLike
 from alarm.models import Alarm
-from club.models import Club, ClubMember, ClubPost, ClubPostReply, ClubNotice
+from club.models import Club, ClubMember, ClubPost, ClubPostReply, ClubNotice, ClubCategory
 from member.models import Member
 from teenplay.models import TeenPlay
 from teenplay_server import settings
 from teenplay_server.category import Category
+from teenplay_server.models import Region
 
 
 # 모임 생성 전 모임에 대한 소개글을 정적 데이터로 구성해 놓은 페이지로 이동하는 view
@@ -29,7 +30,11 @@ class ClubIntroView(View):
 class ClubCreateView(View):
     # 모임 생성 시 필요한 정보는 session과 생성 페이지에서 입력받기 때문에 다른 정보는 전달하지 않는다.
     def get(self, request):
-        return render(request, 'club/web/club-create-web.html')
+
+        categories = Category.objects.all()
+        regions = Region.objects.all()
+
+        return render(request, 'club/web/club-create-web.html', {'categories': categories, 'regions': regions})
 
     # 모임 생성 후 상세보기 페이지로 이동하지만 request를 비워 반복 생성을 막기 위해 redirect를 사용
     @transaction.atomic
@@ -42,14 +47,33 @@ class ClubCreateView(View):
         member = Member(**request.session['member'])
         # 새로운 모임 데이터를 만들기 위해 필요한 정보들을 dict객체 형식으로 만들기
         data = {
+            'club_main_category_id': data['club-category'],
             'club_name': data['club-name'],
+            'club_region_id': data['club-region'],
             'club_intro': data['club-intro'],
             'member': member,
             'club_profile_path': file.get('club-profile'),
             'club_banner_path': file.get('club-banner')
         }
+
         # kwagrs형식으로 사용하여 club테이블에 insert하고 Club타입의 메소드를 사용하기 위해 객체화 진행
         club = Club.objects.create(**data)
+
+        # 생성한 모임의 서브 카테고리를 저장하기 위해 생성한 모임의 id를 객체화
+        club_id = club.id
+        # 서브 카테고리를 저장하기 위해 입력 받은 정보를 저장
+        sub_categories = request.POST.getlist('club-sub-category')
+
+        if sub_categories is not None:
+            for sub_category in sub_categories:
+                # 새로운 모임 데이터를 만들기 위해 필요한 정보들을 dict객체 형식으로 만들기
+                data = {
+                    'club_id': club_id,
+                    'category_id': sub_category
+                }
+                # kwagrs형식으로 사용하여 clubCategory테이블에 insert
+                ClubCategory.objects.create(**data)
+
         # 새로고침 할 때마다 insert되는 것을 방지하기 위해 redirect방식을 사용하였으며
         # 모임 상세보기 이동은 간단한 url이기 때문에 Model Convention의 def get_absolute_url()을 정의하고 사용
         return redirect(club.get_absolute_url())
@@ -248,14 +272,15 @@ class ClubPrPostWriteView(View):
         datas = request.POST
         files = request.FILES
         club = Club.objects.get(id=request.POST['club_id'])
-        # 카테고리의 이름을 통해 조회하고 객체화
-        category = Category.objects.get(category_name=datas['category'])
+        # # 카테고리의 이름을 통해 조회하고 객체화
+        # category = Category.objects.get(category_name=datas['category'])
+
         # club_post에 insert하기 위해 필요한 정보를 dict형태로 선언
         datas = {
             'club': club,
             'post_title': datas['title'],
             'post_content': datas['content'],
-            'category': category,
+            # 'category': category,
             'image_path': files['image']
         }
         # 위에서 선언한 변수를 언페킹하여 create에 사용
@@ -271,6 +296,10 @@ class ClubPrPostDetailView(View):
     def get(self, request):
         # 해당 모임 홍보들에 대한 정보를 조회 후 객체화
         club_post = ClubPost.enabled_objects.get(id=request.GET['id'])
+        # 해당 모임에 대한 카테고리를 조회 후 객체화
+        club = Club.objects.get(id=club_post.club_id)
+        club_main_category_id = club.club_main_category_id
+        category = Category.objects.get(id=club_main_category_id)
         # 해당 모임 홍보글에 대한 댓글들을 조회 후 객체화, 없을 경우 오류를 방지하기 위해 .filter()사용
         replies = ClubPostReply.enabled_objects.filter(club_post=club_post).values()
         # 해당 모임 홍보글의 조회수를 1증가
@@ -281,6 +310,7 @@ class ClubPrPostDetailView(View):
 
         context = {
             'club_post': club_post,
+            'club_category': category,
             'replies': list(replies)
         }
 
@@ -313,11 +343,11 @@ class ClubPrPostUpdateView(View):
         files = request.FILES
 
         club_post = ClubPost.objects.get(id=datas['club_post_id'])
-        category = Category.objects.get(category_name=datas['category'])
+        # category = Category.objects.get(category_name=datas['category'])
 
         club_post.post_title = datas['title']
         club_post.post_content = datas['content']
-        club_post.category = category
+        # club_post.category = category
         # 만약 전달 받은 file정보가 있다면
         if files:
             # ClubPost class에 선언해 놓은 image_delete() 메소드를 사용해 기존 이미지를 삭제
@@ -325,11 +355,11 @@ class ClubPrPostUpdateView(View):
             # 새롭게 전달받은 이미지 경로로 변경
             club_post.image_path = files['image']
             club_post.updated_date = timezone.now()
-            club_post.save(update_fields=['post_title', 'post_content', 'category', 'image_path', 'updated_date'])
+            club_post.save(update_fields=['post_title', 'post_content','image_path', 'updated_date'])
         # 만약 전달 받은 file정보가 없다면
         else:
             club_post.updated_date = timezone.now()
-            club_post.save(update_fields=['post_title', 'post_content', 'category', 'updated_date'])
+            club_post.save(update_fields=['post_title', 'post_content', 'updated_date'])
 
         return redirect(club_post.get_absolute_url())
 
@@ -446,11 +476,14 @@ class ClubPrPostListView(View):
         order = request.GET.get('order', '최신순')
         page = request.GET.get('page', 1)
 
+        categories = Category.objects.all()
+
         context = {
             'keyword': keyword,
             'category': category,
             'order': order,
-            'page': page
+            'page': page,
+            'categories': categories
         }
 
         return render(request, 'club/web/club-pr-posts-web.html', context)
@@ -460,11 +493,14 @@ class ClubPrPostListView(View):
     def post(self, request):
         datas = request.POST
 
+        categories = Category.objects.all()
+
         context = {
             'keyword': datas.get('keyword', ''),
             'category': datas.get('category', ''),
             'order': datas.get('order', '최신순'),
-            'page': datas.get('page', 1)
+            'page': datas.get('page', 1),
+            'categories': categories,
         }
 
         return render(request, 'club/web/club-pr-posts-web.html', context)
@@ -487,8 +523,10 @@ class ClubPrPostListAPI(APIView):
         limit = page * row_count
         # 조건식에 icontains을 넣음으로써 대,소문자 상관없이 조회하도록 하였으며 keyword는 홍보글 제목이나 모임 이름이 둘중 하나라도 포함되어도 문제없도록 구성
         condition = Q(post_title__icontains=keyword) | Q(club__club_name__icontains=keyword)
+
         # category의 이름으로 조회
-        condition &= Q(category__category_name__icontains=category)
+        if category:
+            condition &= Q(club__club_main_category_id__exact=category)
         # 위에서 작성한 조건식으로 검색된 정보들의 개수를 집계하고 변수로 선언
         total_count = ClubPost.enabled_objects.filter(condition).count()
 
@@ -516,10 +554,14 @@ class ClubPrPostListAPI(APIView):
         # 반복문을 이용하여 각 모임 홍보글에 화면에서 필요로하는 정보를 추가
         for club_post in club_posts:
             # 여러 테이블에서 정보를 가져와야 하기 때문에 역참조를 사용할 경우 중복이 발생하기 때문에 각각 필요한 정보만 가져와 값을 넣는 방식을 선택
-            club_post['category_name'] = Category.objects.filter(id=club_post['category_id']).first().category_name
+            # club_post['category_name'] = Category.objects.filter(id=club_post['category_id']).first().category_name
             club_post['club_name'] = Club.objects.filter(id=club_post['club_id']).first().club_name
             club_post['club_member_count'] = ClubMember.enabled_objects.filter(club_id=club_post['club_id']).count()
             club_post['reply_count'] = ClubPostReply.enabled_objects.filter(club_post_id=club_post['id']).count()
+
+            club_id = club_post['club_id']
+            club_category_id = Club.objects.filter(id=club_id).first().club_main_category_id
+            club_post['category_name'] = Category.objects.filter(id=club_category_id).first().category_name
 
         club_posts.append(page_info)
 

@@ -57,7 +57,6 @@ urlpatterns = [
     path('teenplay/', include('teenplay.urls-web')),
     path('app/teenplay/', include('teenplay.urls-app')),
     path('notice/', include('notice.urls-web')),
-    path('notice/', include('notice.urls-web')),
     path('app/notice/', include('notice.urls-app')),
     path('festival/', include('festival.urls-web')),
     path('app/festival/', include('festival.urls-app')),

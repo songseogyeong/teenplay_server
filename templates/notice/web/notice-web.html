@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="shortcut icon" href="/staticfiles/images/teenplay_logo/logo1.png" type="image/x-icon" />
-        <link rel="stylesheet" href="/staticfiles/css/notice/web/notice-web.css" />
+        <link rel="shortcut icon" href="{% static 'public/web/images/logo/logo1.png' %}" type="image/x-icon" />
+        <link rel="stylesheet" href="{% static 'notice/web/css/notice-web.css' %}" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
         <title>틴플 :: 공지사항</title>
     </head>
@@ -650,8 +651,8 @@
         <footer></footer>
     </body>
 
-    <script src="/staticfiles/js/notice/web/notice-add-web.js"></script>
-    <script src="/staticfiles/js/notice/web/notice-change-web.js"></script>
-    <script src="/staticfiles/js/notice/web/notice-question-add-web.js"></script>
+    <script src="{%  static "notice/web/js/notice-add-web.js" %}"></script>
+    <script src="{%  static "notice/web/js/notice-change-web.js" %}"></script>
+    <script src="{%  static "notice/web/js/notice-question-add-web.js" %}"></script>
     <script></script>
 </html>

@@ -2,6 +2,14 @@
 {% load static %}
 {% block static %}
     <link rel="stylesheet" href="{% static 'club/web/css/club-create-web.css' %}">
+    <style>
+        .hidden-checkbox {
+         display: none;
+         }
+        .check-btn{
+            margin-top: 0;
+        }
+    </style>
 {% endblock %}
 
 {% block title %}틴플 :: 모임 개설하기{% endblock %}
@@ -29,18 +37,43 @@
                         </div>
                         <div class="name-form-content-wrap">
                             <div class="name-form-text-wrap">
-                                <div class="name-form-text-title">모임의 이름을 입력해주세요.</div>
+                                <div class="name-form-text-title">모임의 이름과 카테고리를 정해주세요.</div>
                                 <div class="name-form-text-content">
-                                    틴플레이에서 모임의 이름이 됩니다.
+                                    틴플레이에서 모임의 얼굴이 됩니다.
                                     <br />
-                                    활동과 모임의 성향에 맞는 이름을 정해주세요.
+                                    활동과 모임의 성향에 맞는 이름과 카테고리를 정해주세요.
                                 </div>
                                 <div class="name-form-input-wrap">
                                     <div>
-                                        <div>
-                                            <input name="club-name" type="text" class="name-form-input" placeholder="ex) 틴플레이" maxlength="10" />
+                                        <div class="name-form-input-box">
+                                            <div class="pr-write-title-wrap">
+                                                <select name="club-category" class="pr-write-fields" required>
+                                                    <option value class="pr-write-default">카테고리</option>
+                                                    {% for category in categories %}
+                                                        <option value="{{ category.id }}">{{ category.category_name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <input name="club-name" class="name-form-input" type="text" placeholder="ex) 틴플레이" maxlength="10" />
                                         </div>
                                     </div>
+                                </div>
+                                <div class="interest-select-box hidden">
+                                {% for category in categories %}
+                                    <input type="checkbox" class="hidden-checkbox" id="{{ category.id }}" name="club-sub-category" value="{{ category.id }}"
+{#                                           {% for item in category_statuses %}#}
+{#                                               {% if item.category_id == category.id and item.status %}#}
+{#                                                   checked#}
+{#                                               {% endif %}#}
+{#                                           {% endfor %}#}
+                                    >
+                                    <label class="interest-category
+{#                                        {% for member_category in request.session.member_category %}{% if member_category.category_id == category.id and member_category.status %}selected-category{% endif %}{% endfor %}#}
+                                        " for="{{ category.id }}">
+                                        {{ category.category_name }}
+                                    </label>
+                                {% endfor %}
+                                <span class="select-error hidden" style="color: #CE201B"> ※ 추가 카테고리는 최대 3개까지 선택이 가능합니다.</span>
                                 </div>
                                 <div class="name-form-button-wrap">
                                     <button type="button" class="name-form-button disabled">다음</button>
@@ -72,19 +105,34 @@
                         <div class="desc-form-content-wrap">
                             <div class="desc-form-text-wrap">
                                 <!-- 대괄호 안에는 이전에 입력한 모임명을 넣습니다. -->
-                                <div class="desc-form-text-title">[틴플레이]에 대한 소개글을 작성해주세요.</div>
+                                <div class="desc-form-text-title">[틴플레이]에 대한 소개글과 활동 지역을 선택해주세요.</div>
                                 <div class="desc-form-text-content">
                                     모임에 대해 한 마디로 소개해주세요.
                                     <br />
-                                    소개글은 마이페이지에서 언제든 수정할 수 있어요.
+                                    소개글과 활동 지역은 마이페이지에서 언제든 수정할 수 있어요.
                                 </div>
                                 <div class="desc-form-input-wrap">
                                     <div>
-                                        <div>
+                                        <div class="desc-form-input-box">
+                                             <div class="pr-write-desc-wrap">
+                                                <select name="club-region" class="pr-write-desc-fields" required>
+                                                    <option value class="pr-write-desc-default">지역</option>
+                                                    {% for region in regions %}
+                                                        <option value="{{ region.id }}">{{ region.region }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
                                             <input name="club-intro" type="text" class="desc-form-input" placeholder="우리 모임을 한 마디로 표현한다면?" maxlength="100" />
                                         </div>
                                     </div>
                                 </div>
+{#                                <div class="desc-form-input-wrap">#}
+{#                                    <div>#}
+{#                                        <div>#}
+{#                                            <input name="club-intro" type="text" class="desc-form-input" placeholder="우리 모임을 한 마디로 표현한다면?" maxlength="100" />#}
+{#                                        </div>#}
+{#                                    </div>#}
+{#                                </div>#}
                                 <div class="desc-form-button-wrap">
                                     <button type="button" class="desc-form-prev-button">이전 단계</button>
                                     <button type="button" class="desc-form-button disabled">다음</button>

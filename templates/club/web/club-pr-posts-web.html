@@ -40,19 +40,22 @@
                 <div class="pr-post-search-container">
                     <select name="category" class="pr-post-category-box">
                         <option value="">전체</option>
-                        <option value="취미">취미</option>
-                        <option value="문화·예술">문화·예술</option>
-                        <option value="운동·액티비티">운동·액티비티</option>
-                        <option value="푸드·드링크">푸드·드링크</option>
-                        <option value="여행·동행">여행·동행</option>
-                        <option value="성장·자기개발">성장·자기개발</option>
-                        <option value="동네·또래">동네·또래</option>
-                        <option value="연애·소개팅">연애·소개팅</option>
-                        <option value="재테크">재테크</option>
-                        <option value="외국어">외국어</option>
-                        <option value="스터디">스터디</option>
-                        <option value="지역축제">지역축제</option>
-                        <option value="기타">기타</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.category_name }}</option>
+                        {% endfor %}
+{#                        <option value="취미">취미</option>#}
+{#                        <option value="문화·예술">문화·예술</option>#}
+{#                        <option value="운동·액티비티">운동·액티비티</option>#}
+{#                        <option value="푸드·드링크">푸드·드링크</option>#}
+{#                        <option value="여행·동행">여행·동행</option>#}
+{#                        <option value="성장·자기개발">성장·자기개발</option>#}
+{#                        <option value="동네·또래">동네·또래</option>#}
+{#                        <option value="연애·소개팅">연애·소개팅</option>#}
+{#                        <option value="재테크">재테크</option>#}
+{#                        <option value="외국어">외국어</option>#}
+{#                        <option value="스터디">스터디</option>#}
+{#                        <option value="지역축제">지역축제</option>#}
+{#                        <option value="기타">기타</option>#}
                     </select>
                     <div class="pr-post-search-box">
                         <button class="pr-post-search-button">
