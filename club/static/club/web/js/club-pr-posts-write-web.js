@@ -37,16 +37,17 @@ let tempDraggedFile = false;
 // }
 
 function checkValuesAndValidateButton() {
-    if (!titleInput.value || !contentInput.value || !fileNameInfo.innerText) {
-        writeBtn.disabled = true;
+    if (titleInput.value && contentInput.value && fileNameInfo.innerText) {
+        writeBtn.disabled = false;
         return;
     }
-    writeBtn.disabled = false;
+    writeBtn.disabled = true;
 }
 
 // categorySelect.addEventListener("change", () => {
 //     checkValuesAndValidateButton();
 // });
+
 titleInput.addEventListener("keyup", () => {
     checkValuesAndValidateButton();
 });
