@@ -28,9 +28,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-ae#4x$6v8%w$ltg(5hdq43$*=+1_v@451gj$2j&t++x9#9o01h'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '3.38.179.123', 'teenplay.online']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '43.203.252.1', 'teenplay.online']
 
 
 # Application definition
@@ -137,11 +137,11 @@ DATABASES = {
         # DATABASE 이름
         'NAME': 'teenplay',
         # 계정 이름
-        'USER': 'mysql',
+        'USER': 'teenplay',
         # 계정 비밀번호
         'PASSWORD': '1234',
         # DBMS가 설치된 서버 PC의 IP, (127.0.0.1 = 로컬)
-        'HOST': '13.125.213.142',
+        'HOST': '15.164.234.80',
         # DBMS의 포트번호
         'PORT': '3306'
     }
