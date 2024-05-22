@@ -12,6 +12,13 @@ import sklearn
 
 
 class AiTests(TestCase):
+    # member = Member.enabled_objects.get(id=13)
+    # member_address = member.member_address
+    #
+    # if member_address is None or member_address.strip() == '':
+    #     print('dd')
+    # else:
+    #     print('no')
 
     # keywords = {
     #     1: ['공예', 'DIY', '수집', '독서', '원예', '사진 촬영', '낚시', '요리', '그림 그리기', '보드게임'],
@@ -28,16 +35,17 @@ class AiTests(TestCase):
     #     12: ['전통 축제', '음악 페스티벌', '문화 행사', '푸드 페스티벌', '연극 축제', '지역 축제', '불꽃놀이'],
     #     13: ['없음', '그 외', '그외']
     # }
-    model_path = os.path.join(Path(__file__).resolve().parent, 'ai/activity_recommender.pkl')
-    model = joblib.load(model_path)
 
-    members = list(Member.objects.filter(id__lt=19))
-    for member in tqdm(members):
-        member_model_path = f'ai/2024/05/20/activity_model{member.id}.pkl'
-        os.makedirs(os.path.dirname(member_model_path), exist_ok=True)
-        joblib.dump(model, member_model_path)
-        # member.member_recommended_activity_model = member_model_path
-        # member.save(update_fields=['member_recommended_activity_model'])
+    # model_path = os.path.join(Path(__file__).resolve().parent, 'ai/club.pkl')
+    # model = joblib.load(model_path)
+    #
+    # members = list(Member.objects.filter(id__lt=19))
+    # for member in tqdm(members):
+    #     member_model_path = f'ai/2024/05/22/club_model{member.id}.pkl'
+    #     os.makedirs(os.path.dirname(member_model_path), exist_ok=True)
+    #     joblib.dump(model, member_model_path)
+    #     member.member_recommended_club_model = member_model_path
+    #     member.save(update_fields=['member_recommended_club_model'])
         # member_favorite_categories = list(MemberFavoriteCategory.objects.filter(status=1, member=member))
         # chosen_categories = []
         # for category in member_favorite_categories:
@@ -51,5 +59,4 @@ class AiTests(TestCase):
         # member.member_keyword3 = member_keywords[2]
         # member.updated_date = timezone.now()
         # member.save(update_fields=['member_keyword1', 'member_keyword2', 'member_keyword3', 'updated_date'])
-
-
+        pass

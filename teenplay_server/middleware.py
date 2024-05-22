@@ -7,7 +7,7 @@ def pre_handle_request(get_response):
         uri = request.get_full_path()
 
         if 'accounts' not in uri and 'oauth' not in uri and 'api' not in uri and 'static' not in uri\
-                and 'admin' not in uri and 'upload' not in uri:
+                and 'admin' not in uri and 'upload' not in uri and 'favicon' not in uri:
             if 'join' not in uri and 'login' not in uri and uri != '/' and 'terms' not in uri \
                     and 'company' not in uri and 'club/intro' not in uri\
                     and 'notice' not in uri and 'festival' not in uri \
