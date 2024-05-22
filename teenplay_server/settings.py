@@ -30,7 +30,7 @@ SECRET_KEY = 'django-insecure-ae#4x$6v8%w$ltg(5hdq43$*=+1_v@451gj$2j&t++x9#9o01h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '43.203.252.1', 'teenplay.online']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '54.180.225.159', 'teenplay.online']
 
 
 # Application definition
