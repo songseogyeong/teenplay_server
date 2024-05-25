@@ -1,3 +1,9 @@
 from django.db import models
 
-# Create your models here.
+
+class ReplyAi(models.Model):
+    comment = models.TextField(null=False, blank=False)
+    target = models.SmallIntegerField(null=False, blank=False)
+
+    class Meta:
+        db_table = 'tbl_reply_ai'

@@ -762,7 +762,7 @@ const showReplies = async (isAdd, replies) => {
                         <!-- 개별 댓글 내용 부분 -->
                         <div class="k-comment-text text${reply.id}">${reply.reply_content.replace(/\n/g, '<br>')}</div>
                     </div>
-                    <div class="comment-modify-button ${reply.id}" style="display: ${reply.member_id !== Number(memberId) ? 'none' : 'block'};">
+                    <div class="comment-modify-button ${reply.id}" >
                         <button class="k-comment-menu" type="button">
                             <svg class="k-comment-menu-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                                 <path fill-rule="evenodd" d="M10.5 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm0 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm0 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" clip-rule="evenodd"></path>
@@ -771,8 +771,9 @@ const showReplies = async (isAdd, replies) => {
                         <div class="k-comment-menu-open-wrap ${reply.id}">
                             <div class="k-comment-menu-open-container" role="none">
                                 <div class="k-comment-menu-open-divison" role="none">
-                                    <button class="k-comment-menu-open-choice update ${reply.id}" type="button" id="comment-menu-open-update">수정</button>
-                                    <button class="k-comment-menu-open-choice delete ${reply.id}" type="button" id="comment-menu-open-delete">삭제</button>
+                                    <button class="k-comment-menu-open-choice update ${reply.id}" style="display: ${reply.member_id !== Number(memberId) ? 'none' : 'block'};" type="button" id="comment-menu-open-update">수정</button>
+                                    <button class="k-comment-menu-open-choice delete ${reply.id}" style="display: ${reply.member_id !== Number(memberId) ? 'none' : 'block'};" type="button" id="comment-menu-open-delete">삭제</button>
+                                    <button class="k-comment-menu-open-choice report ${reply.id}" style="display: ${reply.member_id === Number(memberId) ? 'none' : 'block'};" type="button" id="comment-menu-open-report">신고</button>
                                 </div>
                             </div>
                         </div>
@@ -791,6 +792,7 @@ const showReplies = async (isAdd, replies) => {
         addClickEventHideUpdate();
         addClickEventUpdateUpload();
         addClickEventDelete();
+        addClickEventReport();
         addClickEventReplyProfile();
     }
 }
@@ -846,11 +848,16 @@ replyUploadButton.addEventListener("click", async () => {
     const replyTextarea = document.querySelector("textarea.k-comment-input-guide")
     const replyText = replyTextarea.value;
     if (!replyText) return;
-    await activityReplyService.write({
+    const result = await activityReplyService.write({
         'member_id': memberId,
         'reply_content': replyText,
         'activity_id': activityId
     });
+
+    if(result === 'profanity'){
+        alert('비속어가 포함되어 있어 댓글을 작성할 수 없습니다.')
+    }
+
     page = 1;
     replyTextarea.value = '';
     await activityReplyService.getList(false, page, activityId, showReplies);
@@ -864,12 +871,17 @@ const addClickEventUpdateUpload = () => {
             const updateTextarea = document.getElementById(`textarea${e.target.classList[1]}`);
             const updateContent = updateTextarea.value;
             if (!updateContent) return;
-            await activityReplyService.update({
+            const result = await activityReplyService.update({
                 'member_id': memberId,
                 'reply_content': updateContent,
                 'activity_id': activityId,
                 'id': e.target.classList[1]
             });
+
+            if(result === 'profanity'){
+                alert('비속어가 포함되어 있어 댓글이 수정할 수 없습니다.')
+            }
+
             page = 1;
             updateTextarea.value = '';
             await activityReplyService.getList(false, page, activityId, showReplies);
@@ -886,6 +898,25 @@ const addClickEventDelete = () => {
             });
             page = 1;
             await activityReplyService.getList(false, page, activityId, showReplies);
+        })
+    })
+}
+
+// 댓글 신고하기
+const addClickEventReport = () => {
+    const replyReportButtons = document.querySelectorAll(".k-comment-menu-open-choice.report")
+    replyReportButtons.forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+            if (confirm('해당 댓글을 욕설 사용으로 신고하시겠습니까?')) {
+                const replyId = e.target.classList[2];
+                await activityReplyService.report({'reply_id': replyId, 'reply_type': 'activity'})
+                page = 1;
+                await activityReplyService.getList(false, page, activityId, showReplies);
+                alert("신고가 접수되어 해당 댓글이 삭제됩니다.");
+            } else {
+
+            }
+
         })
     })
 }
@@ -951,5 +982,5 @@ activityJoinButton.addEventListener("click", () => {
 // 관리하기 버튼 클릭 시 관리페이지로 이동
 const activityManageButton = document.querySelector(".manage-item-button");
 activityManageButton.addEventListener("click", () => {
-    location.href = `/member/activity?activity_id=${activityId}`;
+    location.href = `../..`;
 })

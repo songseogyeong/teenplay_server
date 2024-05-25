@@ -1,17 +1,20 @@
 import os
 from pathlib import Path
 
+from django.db import transaction
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import joblib
 import numpy as np
 
-from activity.models import Activity, ActivityLike, ActivityMember
+from activity.models import Activity, ActivityLike, ActivityMember, ActivityReply
 from activity.serializers import ActivitySerializer
-from club.models import Club, ClubMember
+from ai.models import ReplyAi
+from club.models import Club, ClubMember, ClubPostReply
 from club.serializers import ClubSerializer
 from member.models import Member, MemberFavoriteCategory
+from wishlist.models import WishlistReply
 
 
 # Create your views here.
@@ -78,7 +81,7 @@ class RecommendedAClubAPIView(APIView):
             model = joblib.load(os.path.join(Path(__file__).resolve().parent, 'ai/club.pkl'))
             # 훈련 (훈련 키워드는 특정 시즌(ex_여름 시즌, 겨울 시즌 등)에 맞춰 팀 회의 진행 후 지정)
             # 카테고리 별 확률 순서 객체 생성
-            probabilities = model.predict_proba(['여행 바다 산 여름 시원한'])
+            probabilities = model.predict_proba(['여행 동행 바다 산 여름 시원한'])
             # 훈련 결과를 인덱스로 변환하고 내림차순으로 정렬된 카테고리 객체 생성 (argsort: 인덱스로 반환)
             # 카테고리는 0부터 시작이 아니고 1부터 시작이기 때문에 1을 더하여 카테고리 순서를 맞추기
             showing_categories = probabilities.argsort()[0][::-1] + 1
@@ -169,11 +172,38 @@ class RecommendedAClubAPIView(APIView):
         return Response(data)
 
 
+class ReportReplyAPI(APIView):
+    @transaction.atomic
+    def post(self, request):
+        reply_id = request.data['reply_id']
+        reply_type = request.data['reply_type']
+        reply = None
 
+        if reply_type == 'activity':
+            reply = ActivityReply.objects.get(id=reply_id)
+
+        elif reply_type == 'club_post':
+            reply = ClubPostReply.objects.get(id=reply_id)
+
+        else:
+            reply = WishlistReply.objects.get(id=reply_id)
+
+        # 모델소환
+        model_file_path = os.path.join(Path(__file__).resolve().parent, 'ai/ai/reply_default_model.pkl')
+        model = joblib.load(model_file_path)
+        X_train = [reply.reply_content]
+
+        # 추가 fit
+        transformed_X_train = model.named_steps['count_vectorizer'].transform(X_train)
+        model.named_steps['multinomial_NB'].partial_fit(transformed_X_train, [1])
+        joblib.dump(model, model_file_path)
+
+        # insert
+        ReplyAi.objects.create(comment=X_train[0], target=1)
+        reply.delete()
+
+        return Response("profanity")
 
 # 사전 학습 모델과 sklearn 버전이 맞지 않는 오류 발생
 # jupyter notebook에서 pip install --upgrade scikit-learn==1.4.2
 # 또는 django 버전 수정 pip install scikit-learn==1.2.2
-
-
-

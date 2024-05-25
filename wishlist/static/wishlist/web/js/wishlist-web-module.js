@@ -28,6 +28,7 @@ const wishlistService = (() => {
             },
             body: JSON.stringify(reply)
         });
+        return await response.json()
     }
 
     const replygetList = async (wishlistId, callback) => {
@@ -66,7 +67,7 @@ const wishlistService = (() => {
     }
 
     const replyUpdate = async (replyId, newReply) => {
-        await fetch(`/wishlist/reply/${replyId}/`, {
+        const response = await fetch(`/wishlist/reply/${replyId}/`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json;charset=utf-8',
@@ -74,6 +75,7 @@ const wishlistService = (() => {
             },
             body: JSON.stringify({'reply_content': newReply})
         });
+        return await response.json()
     }
 
     const likeWishlist = async (wishlistId, memberId, displayStyle, callback) => {
@@ -85,8 +87,18 @@ const wishlistService = (() => {
         return(postlike)
     };
 
+    const replyReport = async (replyInfo) => {
+        await fetch(`/ai/api/report/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json;charset=utf-8',
+                'X-CSRFToken': csrf_token
+            },
+            body: JSON.stringify(replyInfo)
+        })
+    }
 
-    return { write: write, getList: getList, replyWrite:replyWrite, replygetList:replygetList, wishlistRemove:wishlistRemove, wishlistUpdate:wishlistUpdate, replyRemove:replyRemove, replyUpdate:replyUpdate, likeWishlist:likeWishlist }
+    return { write: write, getList: getList, replyWrite:replyWrite, replygetList:replygetList, wishlistRemove:wishlistRemove, wishlistUpdate:wishlistUpdate, replyRemove:replyRemove, replyUpdate:replyUpdate, likeWishlist:likeWishlist, replyReport:replyReport }
 })();
 
 const activityLetterService = (() => {

@@ -76,7 +76,11 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="teenchin-list"></div>
+                                <div class="teenchin-list">
+                                    <div id="loadingSpinner">
+                                      <img class="maskaaa" src='https://i.ibb.co/20zw80q/1487.gif'>
+                                    </div>
+                                </div>
                                 <button class="teenchin-more-btn" type="button">더보기
                                     <div class="more-text-box">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="down-arrow-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
@@ -84,6 +88,16 @@
                                         </svg>
                                     </div>
                                 </button>
+                                <div class="service-title-box">
+                                    <div class="service-title">틴친 추천</div>
+                                </div>
+                                {#                                테스트#}
+                                <div class="a">
+                                    <div class="teenchin-list-add">
+                                    </div>
+                                </div>
+                                    {#                                테스트#}
+
                             </div>
                         </div>
                     </div>
@@ -118,7 +132,7 @@
                         </div>
                         <div class="letter-content-area">
                             <!-- 쪽지 내용 필요 -->
-                            <textarea name="send-content" rows="10" placeholder="쪽지의 내용을 작성해 주세요."></textarea>
+                            <textarea id="send-content" name="send-content" rows="10" placeholder="쪽지의 내용을 작성해 주세요."></textarea>
                         </div>
                         <div class="modal-btn-box">
                             <button class="send-close-btn" type="button">닫기</button>
@@ -181,13 +195,15 @@
             </div>
         </div>
     </body>
+    
+    
 {% endblock %}
 
 {% block js %}
     <script>
     const csrf_Token = '{{ csrf_token }}';
     const member_id = '{{ request.session.member.id }}'
-    
+
     const selectbut = document.querySelectorAll(".tab")
     let status_teenchin = '전체'
     selectbut.forEach((btn)=>{
@@ -207,12 +223,13 @@
             textInsert.value = ''
             const text = await teenchinService.getList(member_id, page,status_teenchin,search, showList);
             teenchinshow.innerHTML = text;
-            
+
         }
     });
-
     
+
     </script>
     <script src="{% static 'member/web/js/my-teenchin-module-web.js' %}"></script>
     <script src="{% static 'member/web/js/my-teenchin-web.js' %}"></script>
+    <script src="{% static 'member/web/js/my-teenchin-web-scroll.js' %}"></script>
 {% endblock %}

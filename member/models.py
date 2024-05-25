@@ -1,5 +1,3 @@
-### member/models.py 입니다 마이그레이션 드루갑니다!
-
 from django.db import models
 
 from member.managers import MemberManager

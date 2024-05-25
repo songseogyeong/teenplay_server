@@ -29,6 +29,9 @@ import pickle
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+from teenplay_server.utils.util.util import check_the_comments
+
+
 def make_datetime(date, time="00:00"):
     '''
     문자열 타입의 날짜 혹은 날짜와 시간을 전달 받아,
@@ -191,6 +194,7 @@ class ActivityCreateWebView(View):
             return redirect(f'/activity/create?club_id={club.id}')
 
 
+
 class ActivityDetailWebView(View):
 
     @staticmethod
@@ -213,19 +217,6 @@ class ActivityDetailWebView(View):
         clean = re.compile('[^0-9a-zA-Zㄱ-ㅎ가-힣ㅏ-ㅣ ]')
         # 특수문자 및 기호를 빈 문자열로 대체합니다.
         return re.sub(clean, ' ', text)
-
-    # 활동 데이터프레임 생성
-    # activities = Activity.objects.all()
-    #
-    # activity_data = []
-    # for activity in activities:
-    #     activity_data.append((activity.activity_title, activity.activity_content, activity.id))
-    #
-    # a_df = pd.DataFrame(activity_data, columns=['activity_title', 'activity_content', 'activity_intro', 'activity_address_location',  'id'])
-    # a_df.activity_content = a_df.activity_content.apply(remove_html_tags)
-    # a_df.activity_content = a_df.activity_content.apply(lambda x: x.replace("\"", ""))
-    # a_df['feature'] = a_df['activity_title'] + ' ' + a_df['activity_content'] + ' ' + a_df['activity_intro'] + ' ' + a_df['activity_address_location']
-    # result_df = a_df.feature
 
     # 활동 데이터프레임 생성
     activities = Activity.enabled_objects.annotate(
@@ -257,15 +248,12 @@ class ActivityDetailWebView(View):
     a_df.activity_content = a_df.activity_content.apply(remove_html_tags)
     a_df.activity_content = a_df.activity_content.apply(lambda x: x.replace("\"", ""))
     a_df['feature'] = a_df['activity_title'] + ' ' + a_df['activity_content'] + ' ' + a_df['activity_intro'] + ' ' + a_df['activity_address_location'] + ' ' + a_df['category_name']
-    a_df.feature = a_df.feature.apply(remove_special_characters_except_spaces)
+    a_df.feature = a_df.feature.apply(remove_special_characters_except_spaces).replace("나만의", " ").str.replace("원데이 클래스", " ")
     result_df = a_df.feature
-    # print(result_df)
-    print(result_df[1])
-
 
     @staticmethod
     def get_index_from_title(title):
-        return ActivityDetailWebView.a_df[ActivityDetailWebView.a_df.activity_title == title].index[0]
+        return ActivityDetailWebView.a_df[ActivityDetailWebView.a_df.feature == title].index[0]
 
     @staticmethod
     def get_title_from_index(index):
@@ -337,13 +325,10 @@ class ActivityDetailWebView(View):
         detail_intro = activity.activity_intro
         detail_category = category.category_name
         detail_address = activity.activity_address_location
-        # print(detail_category_name)
-        remove_result = self.remove_html_tags(detail_title) + self.remove_html_tags(detail_content) + self.remove_html_tags(detail_intro) +' ' +   self.remove_html_tags(detail_address) +' ' +  self.remove_html_tags(detail_category)
-        similar_title = self.remove_special_characters_except_spaces(remove_result)
-        print(similar_title)
-
-        # similar_title = activity.activity_title
-        similar_index = self.get_index_from_title(detail_title)
+        remove_result = self.remove_html_tags(detail_title) + ' ' + self.remove_html_tags(detail_content) + ' ' + self.remove_html_tags(detail_intro) +' ' +   self.remove_html_tags(detail_address) +' ' +  self.remove_html_tags(detail_category)
+        remove_result = remove_result.replace("나만의", " ").replace("원데이 클래스", " ")
+        similar_title = self.remove_special_characters_except_spaces(remove_result).replace("나만의", "").replace("원데이 클래스", "")
+        similar_index = self.get_index_from_title(similar_title)
         similar_activity_result = sorted(list(enumerate(c_s[similar_index])), key=lambda x: x[1], reverse=True)
 
         all_activities = []  # 모든 활동을 저장할 리스트
@@ -354,8 +339,6 @@ class ActivityDetailWebView(View):
             activity_items = similar_activity_list.splitlines()
             # 개별 활동을 리스트에 추가
             all_activities.extend(activity_items)
-
-        # print(all_activities)
 
         # 추천 활동 목록에 표시할 활동들을 가져옵니다. 이때 현재 보고 있는 활동은 제외합니다.
         recommended_activities = list(
@@ -526,6 +509,11 @@ class ActivityReplyAPI(APIView):
             'member_id': data['member_id']
         }
 
+        result = check_the_comments(data['reply_content'])
+
+        if result == 'profanity':
+            return Response(result)
+
         # 정리한 데이터를 통해 활동 댓글 객체를 생성하고, 반환된 객체를 저장합니다.
         # 이 객체는 응답하기 위한 객체가 아닌, 알람 생성 시 편리하게 사용하기 위한 객체입니다.
         activity_reply = ActivityReply.objects.create(**data)
@@ -559,6 +547,11 @@ class ActivityReplyAPI(APIView):
         member_id = request.data['member_id']
         reply_content = request.data['reply_content']
         id = request.data['id']
+
+        result = check_the_comments(reply_content)
+
+        if result == 'profanity':
+            return Response(result)
 
         # 댓글 내용을 제외한 다른 정보들과 일치하는 댓글 객체를 조회합니다.
         activity_reply = ActivityReply.enabled_objects.get(id=id, activity_id=activity_id, member_id=member_id)

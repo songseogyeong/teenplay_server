@@ -1,15 +1,36 @@
 import os
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 from django.test import TestCase
 from django.utils import timezone
 
+import re
+
+from activity.models import Activity
+from club.models import Club
 from member.models import Member, MemberFavoriteCategory
 import random
 from tqdm import tqdm
 import joblib
 import sklearn
 
+from teenplay_server.models import Region
+from konlpy.tag import Mecab
+
+@staticmethod
+def clean_text(text):
+    # 문자열로 변환한 후 특수 문자와 줄 바꿈 문자를 제거하고 단일 공백으로 변환하며, 앞뒤 공백을 제거
+    return re.sub(r'[^\w\s]+', '', text).replace('\n', '').replace('\r', ' ').strip()
+
+
+@staticmethod
+def process_club_data(club):
+    # Club 객체의 데이터를 정규 표현식을 사용하여 클린한 후 리스트로 반환
+    text = ' '.join(club)
+    features = clean_text(text)
+    return features
 
 class AiTests(TestCase):
     # member = Member.enabled_objects.get(id=13)
@@ -59,4 +80,64 @@ class AiTests(TestCase):
         # member.member_keyword3 = member_keywords[2]
         # member.updated_date = timezone.now()
         # member.save(update_fields=['member_keyword1', 'member_keyword2', 'member_keyword3', 'updated_date'])
-        pass
+
+    member = Member.enabled_objects.get(id=18)
+
+    # 회원의 ai 모델 경로 찾아오기
+    member_club_ai_path = member.member_recommended_club_model
+
+    # 회원의 ai 모델 경로를 통해 불러오기 (pkl 파일)
+    model = joblib.load(os.path.join(Path(__file__).resolve().parent.parent, member_club_ai_path))
+
+    club = Club.enabled_objects.get(id=4)
+
+    region = Region.objects.get(id=club.club_region_id)
+
+    # 문제-학습 데이터 (지역, 모임명, 모임소개, 모임정보, 카테고리)
+    add_X_trian = [region.region, club.club_name, club.club_intro, club.club_info]
+    # 정답-학습 데이터 (카테고리)
+    add_y_train = [club.club_main_category.id]
+
+    # 정규표현식 함수를 통해 특수문자 등 제거 gn list로 변환
+    add_X_train_clean = [process_club_data(add_X_trian)]
+
+    # # 훈련 결과 확인
+    # result_df = pd.DataFrame(model.cv_results_)[['params', 'mean_test_score', 'rank_test_score']]
+    #
+
+    # 교차 검증 인한 최적의 추정기를 반환
+    model = model.best_estimator_
+
+    # 추가적인 훈련 데이터 변환
+    additional_X_train_transformed = model.named_steps['count_vectorizer'].transform(add_X_train_clean)
+    # 추가 훈련 진행 (카테고리 1부터 11까지 가져오기)
+    # partial_fit는 온라인 학습을 지원하는 메서드로, 데이터가 점진적으로 도착할 때마다 모델을 업데이트
+    model.named_steps['multinomial_NB'].partial_fit(additional_X_train_transformed, add_y_train, classes=[i for i in range(1, 12)])
+
+    ############################
+
+    # activity = Activity.objects.filter(id=15).first()
+    #
+    # category = activity.category
+    # club = activity.club
+    #
+    # # 회원에 맞는 활동 추천 ai 모델을 불러옵니다.
+    # model_file_name = member.member_recommended_activity_model
+    #
+    # # path
+    # model_file_path = os.path.join(Path(__file__).resolve().parent.parent, model_file_name)
+    #
+    # # pkl 파일을 열어 객체 로드
+    # model = joblib.load(model_file_path)
+    #
+    # # 불러온 ai 모델에 추가 fit을 진행합니다.
+    # additional_X_train = [
+    #     activity.activity_title + activity.activity_intro + activity.activity_address_location]
+    # additional_y_train = [activity.category.id]
+    #
+    # print(additional_X_train)
+    # print(additional_y_train)
+    # additional_X_train_transformed = model.named_steps['count_v'].transform(additional_X_train)
+    # model.named_steps['mnnb'].partial_fit(additional_X_train_transformed, additional_y_train,
+    #                                       classes=[i for i in range(1, 14)])
+    # pass

@@ -131,7 +131,21 @@
                                     </div>
                                     <!-- 관심분야 선택 칸 -->
                                     <div>
-                                        <span class="modify-target-title"> 관심분야 </span>
+                                        <div style="display: flex; flex-direction: row; align-content: center;">
+                                            <span class="modify-target-title"> 관심분야 </span>
+                                            <div class="ai-description-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="ai-description-icon-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                <div class="ai-description-wrap">
+                                                    <div class="ai-description-text">
+                                                        선택하신 관심분야는 틴플레이 내 AI 추천 서비스에 활용될 수 있습니다.
+                                                        <br>
+                                                        더 정확한 추천을 위해 선택을 권장드려요!
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="interest-select-box">
                                         {% for category in categories %}
                                             <input type="checkbox" class="hidden-checkbox" id="{{ category.id }}" name="selected_categories" value="{{ category.id }}"
@@ -149,11 +163,27 @@
                                     </div>
                                     <!-- 관심 키워드 입력 칸 -->
                                     <div class="keyword-input-wrap">
-                                        <span class="modify-target-title"> 관심 키워드 (최대 10글자) </span>
-                                        <div class="keyword-input-container">
-                                            <input type="text" placeholder="키워드 1" name="keyword1" id="keyword1" class="keyword-input" value="{{ member.member_keyword1 }}" maxlength="10">
-                                            <input type="text" placeholder="키워드 2" name="keyword2" id="keyword2" class="keyword-input" value="{{ member.member_keyword2 }}" maxlength="10">
-                                            <input type="text" placeholder="키워드 3" name="keyword3" id="keyword3" class="keyword-input" value="{{ member.member_keyword3 }}" maxlength="10">
+                                        <div style="display: flex; flex-direction: row; align-content: center;">
+                                            <span class="modify-target-title"> 관심 키워드 (최대 10글자) </span>
+                                            <div class="ai-keyword-description-icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="ai-keyword-description-icon-icon" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                <div class="ai-keyword-description-wrap">
+                                                    <div class="ai-keyword-description-text">
+                                                        입력하신 키워드는 틴플레이 내 AI 추천 서비스에 활용될 수 있습니다.
+                                                        <br>
+                                                        더 정확한 추천을 위해 입력을 권장드려요!
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="keyword-input-container">
+                                                <input type="text" placeholder="키워드 1" name="keyword1" id="keyword1" class="keyword-input" value="{{ member.member_keyword1 }}" maxlength="10">
+                                                <input type="text" placeholder="키워드 2" name="keyword2" id="keyword2" class="keyword-input" value="{{ member.member_keyword2 }}" maxlength="10">
+                                                <input type="text" placeholder="키워드 3" name="keyword3" id="keyword3" class="keyword-input" value="{{ member.member_keyword3 }}" maxlength="10">
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -1,7 +1,10 @@
 import math
+import os
+from pathlib import Path
 
+import joblib
 from bootpay_backend import BootpayBackend
-from django.db import transaction
+from django.db import transaction, connection
 from django.db.models import F, Q, Value, Count
 from django.shortcuts import render, redirect
 from django.utils import timezone
@@ -22,6 +25,48 @@ from pay.models import Pay, PayCancel
 from teenplay_server.category import Category
 from teenplay_server.models import Region
 from wishlist.models import WishlistReply, Wishlist
+import pandas as pd
+
+def get_member_wishlist_data():
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT id, wishlist_content FROM member_wishlist_view")
+        rows = cursor.fetchall()
+
+    # 가져온 데이터를 데이터프레임으로 변환하고 열 이름을 명시적으로 변경
+    df = pd.DataFrame(rows, columns=['id', 'wishlist_content'])
+
+    return df
+
+class member_id_target():
+    def member_id_target(self, member_target_number):
+
+        data = get_member_wishlist_data()
+        result_df = data.wishlist_content
+
+        from sklearn.feature_extraction.text import CountVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        count_v = CountVectorizer()
+        count_metrix = count_v.fit_transform(result_df)
+
+
+        c_s = cosine_similarity(count_metrix)
+
+        def get_index_from_title(member_id):
+            return data[data.id == member_id].index[0]
+
+        def get_title_from_index(index):
+            return data[data.index == index]['id'].values[0]
+
+        movie_title = member_target_number
+        movie_index = get_index_from_title(movie_title)
+        recommended_movie = sorted(list(enumerate(c_s[movie_index])), key=lambda x: x[1], reverse=True)
+
+        target_member = []
+        for movie in recommended_movie[1:30]:
+            target_member.append(get_title_from_index(movie[0]))
+
+        return target_member
 
 
 class MemberLoginWebView(View):
@@ -75,11 +120,25 @@ class MemberJoinWebView(View):
             'member_marketing_agree': marketing_agree,
             'member_privacy_agree': privacy_agree,
             'member_type': data['member-type'],
-            'member_phone': data['member-phone']
+            'member_phone': data['member-phone'],
+            'member_keyword1': ' ',
+            'member_keyword2': ' ',
+            'member_keyword3': ' ',
+            'member_address': ' '
         }
 
         # data 딕셔너리를 이용하여 tbl_member에 insert하고 반환된 객체를 member에 담아줍니다.
         member = Member.objects.create(**data)
+
+        # 회원별 ai 모델을 생성합니다.
+        # 1. 활동 추천 ai 모델
+        model_path = os.path.join(Path(__file__).resolve().parent.parent, 'ai/ai/activity_recommender.pkl')
+        model = joblib.load(model_path)
+        member_model_path = f'ai/2024/05/20/activity_model{member.id}.pkl'
+        os.makedirs(os.path.dirname(member_model_path), exist_ok=True)
+        joblib.dump(model, member_model_path)
+        member.member_recommended_activity_model = member_model_path
+        member.save(update_fields=['member_recommended_activity_model'])
 
         # member에 담긴 객체를 직렬화하여 member에 다시 담아줍니다.
         member = MemberSerializer(member).data
@@ -415,17 +474,6 @@ class MypageTeenchinview(View):
         return render(request, 'mypage/web/my-teenchin-web.html')
 
 
-class MypageTeenchinAPIview(APIView):
-    def get(self, request, member_id, page):
-        row_count = 2
-        offset = (page - 1) * row_count
-        limit = page * row_count
-
-        teenchin = Friend.objects.filter(receiver_id=member_id).values('id', 'is_friend')[offset:limit]
-
-        return Response(teenchin)
-
-
 ############################################
 class MemberAlarmCountAPI(APIView):
     # 로그인한 상태에서 헤더에 알람 개수를 띄우기 위한 요청에 응답하는 REST API 입니다.
@@ -442,527 +490,99 @@ class MemberAlarmCountAPI(APIView):
 
 #############################################
 class MypageTeenchinAPIview(APIView):
-    def get(self, request, member_id, page):
-        status_letter = request.GET.get('status_teenchin')
-        search_text = request.GET.get('search')[:-1]
+    def get_unmatched_senders(self, member_id):
+        results = member_id_target().member_id_target(member_id)
+        friends = Friend.objects.filter(
+            Q(sender_id__in=results, receiver_id=member_id) |
+            Q(sender_id=member_id, receiver_id__in=results)
+        ).values_list('sender_id', 'receiver_id')
 
+        friend_ids = {sender_id for sender_id, _ in friends}.union(
+            {receiver_id for _, receiver_id in friends}
+        )
+
+        unmatched_senders = [sender_id for sender_id in results if sender_id not in friend_ids]
+        return unmatched_senders
+
+    def get_teenchin_add(self, unmatched_senders):
+        return list(Member.objects.filter(id__in=unmatched_senders).values('id', 'member_nickname'))
+
+    def get_teenchin(self, member_id, is_friend, search_text=''):
+        filters = Q(sender_id=member_id) | Q(receiver_id=member_id)
+        filters &= Q(is_friend=is_friend)
+
+        if search_text:
+            search_filter = Q(receiver__member_nickname__icontains=search_text) | Q(
+                receiver__member_email__icontains=search_text) | Q(
+                sender__member_email__icontains=search_text) | Q(
+                sender__member_nickname__icontains=search_text)
+            filters &= search_filter
+
+        teenchin = Friend.objects.filter(filters).select_related(
+            'sender', 'receiver', 'sender__memberprofile', 'receiver__memberprofile'
+        ).values(
+            'id', 'is_friend', 'sender_id', 'receiver_id',
+            'sender__member_nickname', 'receiver__member_nickname',
+            'sender__memberprofile__profile_path', 'receiver__memberprofile__profile_path'
+        )
+
+        receiver_ids = {item['receiver_id'] if item['receiver_id'] != member_id else item['sender_id'] for item in
+                        teenchin}
+
+        activity_counts = ActivityMember.objects.filter(status=1, member_id__in=receiver_ids).values(
+            'member_id').annotate(count=Count('id'))
+        club_counts = ClubMember.objects.filter(status=1, member_id__in=receiver_ids).values('member_id').annotate(
+            count=Count('id'))
+
+        activity_counts_dict = {m['member_id']: m['count'] for m in activity_counts}
+        club_counts_dict = {m['member_id']: m['count'] for m in club_counts}
+
+        for item in teenchin:
+            receiver_id = item['receiver_id'] if item['receiver_id'] != member_id else item['sender_id']
+            item['activity_count'] = activity_counts_dict.get(receiver_id, 0)
+            item['club_count'] = club_counts_dict.get(receiver_id, 0)
+
+        return list(teenchin)
+
+    def get(self, request, member_id, page):
+        member_id = request.session.get('member').get('id')
+        status_letter = request.GET.get('status_teenchin')
+        search_text = request.GET.get('search', '')[:-1]
         row_count = 9
         offset = (page - 1) * row_count
         limit = page * row_count
 
-        teenchin = []
-        teenchin += Friend.objects.filter(sender_id=member_id, is_friend=1 ).values('id', 'is_friend', 'sender_id', 'receiver_id', 'sender__member_nickname',
-                               'receiver__member_nickname','receiver__memberprofile__profile_path',)
-
-
-        teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=1 ).values('id', 'is_friend', 'sender_id', 'receiver_id', 'sender__member_nickname',
-                               'receiver__member_nickname','sender__memberprofile__profile_path')
-        teenchin += Friend.objects.filter(sender_id=member_id, is_friend=-1).values('id', 'is_friend', 'sender_id',
-                                                                                   'receiver_id',
-                                                                                   'sender__member_nickname',
-                                                                                   'receiver__member_nickname',
-                                                                                   'receiver__memberprofile__profile_path')
-
-
-
-
-        teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=-1).values('id', 'is_friend', 'sender_id',
-                                                                                   'receiver_id',
-                                                                                   'sender__member_nickname',
-                                                                                   'receiver__member_nickname',
-                                                                                   'sender__memberprofile__profile_path')
-
+        unmatched_senders = self.get_unmatched_senders(member_id)
+        teenchin_add = self.get_teenchin_add(unmatched_senders)
 
         if status_letter == 'case-a/':
-            teenchin = []
-            teenchin += Friend.objects.filter(sender_id=member_id, is_friend=1).values('id', 'is_friend', 'sender_id',
-                                                                                       'receiver_id',
-                                                                                       'sender__member_nickname',
-                                                                                       'receiver__member_nickname',
-                                                                                       'receiver__memberprofile__profile_path', )
-
-            for aactivity_count in teenchin:
-                receiver_id = aactivity_count.get('receiver_id')
-                manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-            for club_count in teenchin:
-                receiver_id = club_count.get('receiver_id')
-                manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                            member_id=receiver_id).values().count()
-                club_count['club_count'] = manager_favorite_categories_add
-
-
-
-            teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=1).values('id', 'is_friend', 'sender_id',
-                                                                                         'receiver_id',
-                                                                                         'sender__member_nickname',
-                                                                                         'receiver__member_nickname',
-                                                                                         'sender__memberprofile__profile_path')
-            if search_text:
-                teenchin = []
-                teenchin += Friend.objects.filter(sender_id=member_id, is_friend=1, receiver__member_nickname__icontains=search_text).values('id', 'is_friend',
-                                                                                           'sender_id',
-                                                                                           'receiver_id',
-                                                                                           'sender__member_nickname',
-                                                                                           'receiver__member_nickname',
-                                                                                           'receiver__memberprofile__profile_path', )
-
-                for aactivity_count in teenchin:
-                    receiver_id = aactivity_count.get('receiver_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=receiver_id).values().count()
-                    aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    receiver_id = club_count.get('receiver_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                    club_count['club_count'] = manager_favorite_categories_add
-
-
-
-
-                teenchin += Friend.objects.filter(sender_id=member_id, is_friend=1, receiver__member_email__icontains=search_text).values('id', 'is_friend',
-                                                                                           'sender_id',
-                                                                                           'receiver_id',
-                                                                                           'sender__member_nickname',
-                                                                                           'receiver__member_nickname',
-                                                                                           'receiver__memberprofile__profile_path', )
-
-                for aactivity_count in teenchin:
-                    receiver_id = aactivity_count.get('receiver_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=receiver_id).values().count()
-                    aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    receiver_id = club_count.get('receiver_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                    club_count['club_count'] = manager_favorite_categories_add
-
-
-
-
-                teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=1,sender__member_email__icontains=search_text).values('id', 'is_friend',
-                                                                                             'sender_id',
-                                                                                             'receiver_id',
-                                                                                             'sender__member_nickname',
-                                                                                             'receiver__member_nickname',
-                                                                                             'sender__memberprofile__profile_path')
-                teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=1,sender__member_nickname__icontains=search_text).values('id', 'is_friend',
-                                                                                             'sender_id',
-                                                                                             'receiver_id',
-                                                                                             'sender__member_nickname',
-                                                                                             'receiver__member_nickname',
-                                                                                             'sender__memberprofile__profile_path')
-
-
-        elif status_letter == 'case-b/':
-            teenchin = []
-            teenchin += Friend.objects.filter(sender_id=member_id, is_friend=-1).values('id', 'is_friend', 'sender_id',
-                                                                                        'receiver_id',
-                                                                                        'sender__member_nickname',
-                                                                                        'receiver__member_nickname',
-                                                                                        'receiver__memberprofile__profile_path')
-
-            for aactivity_count in teenchin:
-                receiver_id = aactivity_count.get('receiver_id')
-                manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-            for club_count in teenchin:
-                receiver_id = club_count.get('receiver_id')
-                manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                            member_id=receiver_id).values().count()
-                club_count['club_count'] = manager_favorite_categories_add
-
-
-
-
-
-
-
-            if search_text:
-                teenchin = []
-                teenchin += Friend.objects.filter(sender_id=member_id, is_friend=-1,receiver__member_nickname__icontains=search_text).values('id', 'is_friend',
-                                                                                            'sender_id',
-                                                                                            'receiver_id',
-                                                                                            'sender__member_nickname',
-                                                                                            'receiver__member_nickname',
-                                                                                            'receiver__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    receiver_id = aactivity_count.get('receiver_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=receiver_id).values().count()
-                    aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    receiver_id = club_count.get('receiver_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                    club_count['club_count'] = manager_favorite_categories_add
-
-
-
-
-
-                teenchin += Friend.objects.filter(sender_id=member_id, is_friend=-1,receiver__member_email__icontains=search_text).values('id', 'is_friend',
-                                                                                            'sender_id',
-                                                                                            'receiver_id',
-                                                                                            'sender__member_nickname',
-                                                                                            'receiver__member_nickname',
-                                                                                            'receiver__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    receiver_id = aactivity_count.get('receiver_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=receiver_id).values().count()
-                    aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    receiver_id = club_count.get('receiver_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                    club_count['club_count'] = manager_favorite_categories_add
-
-
-
-
-
-        elif status_letter == 'case-c/':
-            teenchin = []
-            teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=-1).values('id', 'is_friend',
-                                                                                          'sender_id',
-                                                                                          'receiver_id',
-                                                                                          'sender__member_nickname',
-                                                                                          'receiver__member_nickname',
-                                                                                          'sender__memberprofile__profile_path')
-
-            for aactivity_count in teenchin:
-                sender_id = aactivity_count.get('sender_id')
-                manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                member_id=sender_id).values().count()
-                aactivity_count['aactivity_countss'] = manager_favorite_categories_add
-
-            for club_count in teenchin:
-                sender_id = club_count.get('sender_id')
-                manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                            member_id=sender_id).values().count()
-                club_count['club_countss'] = manager_favorite_categories_add
-
-
-            if search_text:
-                teenchin = []
-                teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=-1,sender__member_email__icontains=search_text).values('id', 'is_friend',
-                                                                                              'sender_id',
-                                                                                              'receiver_id',
-                                                                                              'sender__member_nickname',
-                                                                                              'receiver__member_nickname',
-                                                                                              'sender__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    sender_id = aactivity_count.get('sender_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=sender_id).values().count()
-                    aactivity_count['aactivity_countss'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    sender_id = club_count.get('sender_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=sender_id).values().count()
-                    club_count['club_countss'] = manager_favorite_categories_add
-
-
-                teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=-1 ,sender__member_nickname__icontains=search_text).values('id', 'is_friend',
-                                                                                              'sender_id',
-                                                                                              'receiver_id',
-                                                                                              'sender__member_nickname',
-                                                                                              'receiver__member_nickname',
-                                                                                              'sender__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    sender_id = aactivity_count.get('sender_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=sender_id).values().count()
-                    aactivity_count['aactivity_countss'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    sender_id = club_count.get('sender_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=sender_id).values().count()
-                    club_count['club_countss'] = manager_favorite_categories_add
-
-
-
+            teenchin = self.get_teenchin(member_id, 1, search_text)
+        elif status_letter in ['case-b/', 'case-c/']:
+            teenchin = self.get_teenchin(member_id, -1, search_text)
         else:
-            teenchin = []
-            teenchin += Friend.objects.filter(sender_id=member_id, is_friend=1).values('id', 'is_friend', 'sender_id',
-                                                                                       'receiver_id',
-                                                                                       'sender__member_nickname',
-                                                                                       'receiver__member_nickname',
-                                                                                       'receiver__memberprofile__profile_path', )
+            teenchin = self.get_teenchin(member_id, 1, search_text) + self.get_teenchin(member_id, -1, search_text)
 
-            for aactivity_count in teenchin:
-                receiver_id = aactivity_count.get('receiver_id')
-                manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                aactivity_count['aactivity_count'] = manager_favorite_categories_add
+        response_data = {
+            'teenchin': teenchin[offset:limit],
+            'teenchin_add': teenchin_add[:9]
+        }
 
-            for club_count in teenchin:
-                receiver_id = club_count.get('receiver_id')
-                manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                            member_id=receiver_id).values().count()
-                club_count['club_count'] = manager_favorite_categories_add
-
-
-
-            teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=1).values('id', 'is_friend', 'sender_id',
-                                                                                         'receiver_id',
-                                                                                         'sender__member_nickname',
-                                                                                         'receiver__member_nickname',
-                                                                                         'sender__memberprofile__profile_path')
-
-            for aactivity_count in teenchin:
-                sender_id = aactivity_count.get('sender_id')
-                manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                member_id=sender_id).values().count()
-                aactivity_count['aactivity_countss'] = manager_favorite_categories_add
-
-            for club_count in teenchin:
-                sender_id = club_count.get('sender_id')
-                manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                            member_id=sender_id).values().count()
-                club_count['club_countss'] = manager_favorite_categories_add
-
-
-            teenchin += Friend.objects.filter(sender_id=member_id, is_friend=-1).values('id', 'is_friend', 'sender_id',
-                                                                                        'receiver_id',
-                                                                                        'sender__member_nickname',
-                                                                                        'receiver__member_nickname',
-                                                                                        'receiver__memberprofile__profile_path')
-
-            for aactivity_count in teenchin:
-                receiver_id = aactivity_count.get('receiver_id')
-                manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-            for club_count in teenchin:
-                receiver_id = club_count.get('receiver_id')
-                manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                            member_id=receiver_id).values().count()
-                club_count['club_count'] = manager_favorite_categories_add
-
-
-
-            teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=-1).values('id', 'is_friend',
-                                                                                          'sender_id',
-                                                                                          'receiver_id',
-                                                                                          'sender__member_nickname',
-                                                                                          'receiver__member_nickname',
-                                                                                          'sender__memberprofile__profile_path')
-
-
-
-            for aactivity_count in teenchin:
-                sender_id = aactivity_count.get('sender_id')
-                manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                member_id=sender_id).values().count()
-                aactivity_count['aactivity_countss'] = manager_favorite_categories_add
-
-            for club_count in teenchin:
-                sender_id = club_count.get('sender_id')
-                manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                            member_id=sender_id).values().count()
-                club_count['club_countss'] = manager_favorite_categories_add
-
-            if search_text:
-                teenchin = []
-                teenchin += Friend.objects.filter(sender_id=member_id, is_friend=1,receiver__member_nickname__icontains=search_text).values('id', 'is_friend',
-                                                                                           'sender_id',
-                                                                                           'receiver_id',
-                                                                                           'sender__member_nickname',
-                                                                                           'receiver__member_nickname',
-                                                                                           'receiver__memberprofile__profile_path', )
-
-                for aactivity_count in teenchin:
-                    receiver_id = aactivity_count.get('receiver_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=receiver_id).values().count()
-                    aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    receiver_id = club_count.get('receiver_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                    club_count['club_count'] = manager_favorite_categories_add
-
-
-
-
-                teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=1 ,sender__member_nickname__icontains=search_text).values('id', 'is_friend',
-                                                                                             'sender_id',
-                                                                                             'receiver_id',
-                                                                                             'sender__member_nickname',
-                                                                                             'receiver__member_nickname',
-                                                                                             'sender__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    sender_id = aactivity_count.get('sender_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=sender_id).values().count()
-                    aactivity_count['aactivity_countss'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    sender_id = club_count.get('sender_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=sender_id).values().count()
-                    club_count['club_countss'] = manager_favorite_categories_add
-
-
-                teenchin += Friend.objects.filter(sender_id=member_id, is_friend=-1,receiver__member_nickname__icontains=search_text).values('id', 'is_friend',
-                                                                                            'sender_id',
-                                                                                            'receiver_id',
-                                                                                            'sender__member_nickname',
-                                                                                            'receiver__member_nickname',
-                                                                                            'receiver__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    receiver_id = aactivity_count.get('receiver_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=receiver_id).values().count()
-                    aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    receiver_id = club_count.get('receiver_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                    club_count['club_count'] = manager_favorite_categories_add
-
-
-
-                teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=-1,sender__member_nickname__icontains=search_text).values('id', 'is_friend',
-                                                                                              'sender_id',
-                                                                                              'receiver_id',
-                                                                                              'sender__member_nickname',
-                                                                                              'receiver__member_nickname',
-                                                                                              'sender__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    sender_id = aactivity_count.get('sender_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=sender_id).values().count()
-                    aactivity_count['aactivity_countss'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    sender_id = club_count.get('sender_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=sender_id).values().count()
-                    club_count['club_countss'] = manager_favorite_categories_add
-
-
-                teenchin += Friend.objects.filter(sender_id=member_id, is_friend=1,receiver__member_email__icontains=search_text).values('id', 'is_friend',
-                                                                                           'sender_id',
-                                                                                           'receiver_id',
-                                                                                           'sender__member_nickname',
-                                                                                           'receiver__member_nickname',
-                                                                                           'receiver__memberprofile__profile_path', )
-
-                for aactivity_count in teenchin:
-                    receiver_id = aactivity_count.get('receiver_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=receiver_id).values().count()
-                    aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    receiver_id = club_count.get('receiver_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                    club_count['club_count'] = manager_favorite_categories_add
-
-
-                teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=1,sender__member_email__icontains=search_text).values('id', 'is_friend',
-                                                                                             'sender_id',
-                                                                                             'receiver_id',
-                                                                                             'sender__member_nickname',
-                                                                                             'receiver__member_nickname',
-                                                                                             'sender__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    sender_id = aactivity_count.get('sender_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=sender_id).values().count()
-                    aactivity_count['aactivity_countss'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    sender_id = club_count.get('sender_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=sender_id).values().count()
-                    club_count['club_countss'] = manager_favorite_categories_add
-
-
-                teenchin += Friend.objects.filter(sender_id=member_id, is_friend=-1,receiver__member_email__icontains=search_text).values('id', 'is_friend',
-                                                                                            'sender_id',
-                                                                                            'receiver_id',
-                                                                                            'sender__member_nickname',
-                                                                                            'receiver__member_nickname',
-                                                                                            'receiver__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    receiver_id = aactivity_count.get('receiver_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=receiver_id).values().count()
-                    aactivity_count['aactivity_count'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    receiver_id = club_count.get('receiver_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=receiver_id).values().count()
-                    club_count['club_count'] = manager_favorite_categories_add
-
-
-                teenchin += Friend.objects.filter(receiver_id=member_id, is_friend=-1,sender__member_email__icontains=search_text).values('id', 'is_friend',
-                                                                                              'sender_id',
-                                                                                              'receiver_id',
-                                                                                              'sender__member_nickname',
-                                                                                              'receiver__member_nickname',
-                                                                                              'sender__memberprofile__profile_path')
-
-                for aactivity_count in teenchin:
-                    sender_id = aactivity_count.get('sender_id')
-                    manager_favorite_categories_add = ActivityMember.objects.filter(status=1,
-                                                                                    member_id=sender_id).values().count()
-                    aactivity_count['aactivity_countss'] = manager_favorite_categories_add
-
-                for club_count in teenchin:
-                    sender_id = club_count.get('sender_id')
-                    manager_favorite_categories_add = ClubMember.objects.filter(status=1,
-                                                                                member_id=sender_id).values().count()
-                    club_count['club_countss'] = manager_favorite_categories_add
-
-
-
-        return Response(teenchin[offset:limit])
+        return Response(response_data)
 
 
 class MypageTeenchindeleteview(APIView):
     @transaction.atomic
     def delete(self, request, friend_id):
-        print(friend_id)
+        # 친구 제거를 할때 자신이 보낸사람인지 받은사람인지 구분 후 제거작업을 합니다.
         if Friend.objects.filter(receiver_id=friend_id,sender_id=request.session['member']['id']):
             target_id = Friend.objects.filter(receiver_id=friend_id, sender_id=request.session['member']['id']).update(is_friend=0, updated_date=timezone.now())
+            # 알람도 같이 보내줘야합니다.
             Alarm.objects.create(target_id=target_id, receiver_id=friend_id, alarm_type=15,
                                  sender_id=request.session['member']['id'])
-
+        # 친구 제거를 할때 자신이 보낸사람인지 받은사람인지 구분 후 제거작업을 합니다.
         elif Friend.objects.filter(receiver_id=request.session['member']['id'],sender_id=friend_id):
             target_id = Friend.objects.filter(receiver_id=request.session['member']['id'], sender_id=friend_id).update(is_friend=0, updated_date=timezone.now())
-
-
+            # 알람도 같이 보내줘야합니다.
             Alarm.objects.create(target_id=target_id, receiver_id=friend_id, alarm_type=15,
                                  sender_id=request.session['member']['id'])
 
@@ -970,19 +590,31 @@ class MypageTeenchindeleteview(APIView):
 
     @transaction.atomic
     def patch(self, request, friend_id):
-
+        # 친구 받는 작업을 할때 보낸사람, 받는사람 구분해서 작업해줍니다.
         if Friend.objects.filter(receiver_id=friend_id, sender_id=request.session['member']['id']):
             target_id = Friend.objects.filter(receiver_id=friend_id, sender_id=request.session['member']['id']).update(
                 is_friend=1, updated_date=timezone.now())
+            # 알람도 같이 보내줘야합니다.
             Alarm.objects.create(target_id=target_id, receiver_id=friend_id, alarm_type=14,
                                  sender_id=request.session['member']['id'])
-
+        # 친구 받는 작업을 할때 보낸사람, 받는사람 구분해서 작업해줍니다.
         elif Friend.objects.filter(receiver_id=request.session['member']['id'], sender_id=friend_id):
             target_id = Friend.objects.filter(receiver_id=request.session['member']['id'], sender_id=friend_id).update(
                 is_friend=1, updated_date=timezone.now())
-
+            # 알람도 같이 보내줘야합니다.
             Alarm.objects.create(target_id=target_id, receiver_id=friend_id, alarm_type=14,
                                  sender_id=request.session['member']['id'])
+
+        return Response('good')
+
+    @transaction.atomic
+    def put(self, request, friend_id):
+
+        target_id = Friend.objects.create(receiver_id=friend_id, sender_id=request.session['member']['id'])
+        target_id = target_id.id
+        Alarm.objects.create(target_id=target_id, receiver_id=friend_id, sender_id=request.session['member']['id'],
+                             alarm_type=5)
+
 
         return Response('good')
 

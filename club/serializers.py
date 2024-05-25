@@ -7,5 +7,3 @@ class ClubSerializer(serializers.ModelSerializer):
     class Meta:
         model = Club
         fields = '__all__'
-
-

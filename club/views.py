@@ -1,5 +1,10 @@
 import math
 import os.path
+from pathlib import Path
+
+import joblib
+import pandas as pd
+import re
 
 from django.db import transaction
 from django.db.models import F, Q, Count
@@ -17,6 +22,7 @@ from teenplay.models import TeenPlay
 from teenplay_server import settings
 from teenplay_server.category import Category
 from teenplay_server.models import Region
+from teenplay_server.utils.util.util import check_the_comments
 
 
 # 모임 생성 전 모임에 대한 소개글을 정적 데이터로 구성해 놓은 페이지로 이동하는 view
@@ -81,6 +87,18 @@ class ClubCreateView(View):
 
 class ClubDetailView(View):
     def get(self, request):
+        @staticmethod
+        def clean_text(text):
+            # 문자열로 변환한 후 특수 문자와 줄 바꿈 문자를 제거하고 단일 공백으로 변환하며, 앞뒤 공백을 제거
+            return re.sub(r'[^\w\s]+', '', text).replace('\n', '').replace('\r', ' ').strip()
+
+        @staticmethod
+        def process_club_data(club):
+            # Club 객체의 데이터를 정규 표현식을 사용하여 클린한 후 리스트로 반환
+            text = ' '.join(club)
+            features = clean_text(text)
+            return features
+
         club_id = request.GET['id']
         # 상세보기로 이동 시 공지사항, 틴플레이 더보기를 클릭 해서 왔을 경우 바로 해당 정보를 보여주기 위한 구분점
         view = request.GET.get('view', 'activity')
@@ -121,6 +139,42 @@ class ClubDetailView(View):
             # club_info가 비어 있을 때 화면에서 None으로 나오는 경우가 있어 빈문자열로 변경
             if club['club_info'] is None:
                 club['club_info'] = ''
+
+        # club ai 회원 별 학습 로직
+        # 회원 정보를 섹션에서 받아 멤버 객체로 생성 (dict 객체)
+        member = request.session['member']
+
+        # 회원의 정보를 가져오기 (오브젝트 객체)
+        member = Member.enabled_objects.get(id=member.get('id'))
+
+        # 모임의 정보 가져오기 (오브젝트 객체)
+        club = Club.enabled_objects.get(id=club_id)
+
+        # 회원의 ai 모델 경로 찾아오기
+        member_club_ai_path = member.member_recommended_club_model
+
+        # 회원의 ai 모델 경로를 통해 불러오기 (pkl 파일)
+        model = joblib.load(os.path.join(Path(__file__).resolve().parent.parent, member_club_ai_path))
+
+        # 지역 객체 저장
+        region = Region.objects.get(id=club.club_region_id)
+
+        # 문제-학습 데이터 (지역, 모임명, 모임소개, 모임정보, 카테고리)
+        add_X_trian = [region.region, club.club_name, club.club_intro, club.club_info]
+        # 정답-학습 데이터 (카테고리)
+        add_y_train = [club.club_main_category.id]
+
+        # 정규표현식 함수를 통해 특수문자 등 제거 gn list로 변환
+        add_X_train_clean = [process_club_data(add_X_trian)]
+
+        # 추가적인 훈련 데이터 변환
+        additional_X_train_transformed = model.named_steps['count_vectorizer'].transform(add_X_train_clean)
+        # 추가 훈련 진행 (카테고리 1부터 11까지 가져오기)
+        # partial_fit는 온라인 학습을 지원하는 메서드로, 데이터가 점진적으로 도착할 때마다 모델을 업데이트
+        model.named_steps['multinomial_NB'].partial_fit(additional_X_train_transformed, add_y_train, classes=[i for i in range(1, 12)])
+
+        # fit이 완료된 모델을 다시 같은 경로에 같은 이름으로 내보내줍니다.
+        joblib.dump(model, member.member_recommended_club_model)
 
         return render(request, 'club/web/club-detail-web.html', {'club_list': club_list})
 
@@ -417,6 +471,11 @@ class ClubPrPostReplyAPI(APIView):
             'member_id': request.session['member']['id']
         }
 
+        result = check_the_comments(data['reply_content'])
+
+        if result == 'profanity':
+            return Response(result)
+
         post_reply = ClubPostReply.objects.create(**data)
 
         # 알림을 받을 회원의 id를 알기위해 club_post_id로 조회
@@ -442,6 +501,11 @@ class ClubPrPostReplyAPI(APIView):
         data = request.data
         reply_content = data['reply_content']
         reply_id = data['id']
+
+        result = check_the_comments(reply_content)
+
+        if result == 'profanity':
+            return Response(result)
 
         # 전달 받은 댓글 id를 통해 수정할 댓글 조회
         club_post_reply = ClubPostReply.enabled_objects.get(id=reply_id)
