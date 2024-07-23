@@ -72,14 +72,20 @@
 <img src="https://github.com/team-teenplay/teenplay_server/assets/156397974/d7ef5697-a421-40c8-9933-da7bedbd4481" width="60">
 <img src="https://github.com/team-teenplay/teenplay_server/assets/156397974/aeb1c8fc-f0b2-4574-8ef2-54cb779ee276" width="60">
 <img src="https://github.com/team-teenplay/teenplay_server/assets/156397974/597952e6-c4f4-430b-9c40-7930f8262085" width="30">
+
 <br>
+
 #### 📖CLOUD
 ![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
+
 <br>
+
 #### 📖IDE
 ![PyCharm](https://img.shields.io/badge/pycharm-143?style=for-the-badge&logo=pycharm&logoColor=black&color=black&labelColor=green)
 <img src="https://img.shields.io/badge/Visual Studio Code-007ACC.svg?style=round-square&logo=Visual Studio Code&logoColor=white" width="180">
+
 <br>
+
 #### 📖LIBRARY
 ![Django](https://img.shields.io/badge/django-%23092E20.svg?style=for-the-badge&logo=django&logoColor=white)
 ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white)
@@ -88,29 +94,59 @@
 ![CSS](https://img.shields.io/badge/css-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white)
 <img src="https://img.shields.io/badge/MySQL-%2300f.svg?style=round-square&logo=mysql&logoColor=white" width="90">
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+
 <br>
+
 #### 📖SSH
 ![Putty](https://img.shields.io/badge/putty-0D96F6?style=for-the-badge&logo=sahibinden&logoColor=white)
+
 <br>
+
 #### 📖VCS
 ![Gitbash](https://img.shields.io/badge/gitbash-%23F05033.svg?style=for-the-badge&logo=git&logoColor=white)
 ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
 ![Slack](https://img.shields.io/badge/Slack-C71D23?style=for-the-badge&logo=slack&logoColor=white)
 <img src="https://img.shields.io/badge/Sourcetree-0052CC.svg?style=round-square&logo=Sourcetree&logoColor=white" width="125">
+
 <br>
 <br>
 <br>
 <br>
+
 ### 🖼️페이지 이미지
 
 <table style="text-align: center">
   <tr>
-      <td><img src="https://github.com/team-teenplay/teenplay_server/assets/156397974/27a29e57-5616-4230-9068-069587a95ce7"/></td>
-      <td><img src="https://github.com/team-teenplay/teenplay_server/assets/156397974/5f8193d6-268d-4b4c-b8eb-ca400c7b8d8a"/></td>
+      <td><img src="https://github.com/user-attachments/assets/0680b932-d887-4434-8f1d-5ab25e86191d"/></td>
+      <td><img src="https://github.com/user-attachments/assets/bbcf5837-936e-45ac-b8b7-b082b04e1638"/></td>
   </tr>
   <tr>
-      <td><img src="https://github.com/team-teenplay/teenplay_server/assets/156397974/27a29e57-5616-4230-9068-069587a95ce7"/></td>
-      <td><img src="https://github.com/team-teenplay/teenplay_server/assets/156397974/5f8193d6-268d-4b4c-b8eb-ca400c7b8d8a"/></td>
+      <td><img src="https://github.com/user-attachments/assets/095464f1-38b9-4b8a-81b3-bcda275d7255"/></td>
+      <td><img src="https://github.com/user-attachments/assets/1a855cbb-e609-4193-9fe1-729eb3ddc554"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/fe59b28e-5777-47f4-9a74-c7aba3f5d975"/></td>
+      <td><img src="https://github.com/user-attachments/assets/2f4c8b27-318b-4426-9c98-4f79d65cbdd9"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/09aee7b6-fc3e-4084-9160-614d1fc39725"/></td>
+      <td><img src="https://github.com/user-attachments/assets/2b11e45a-3acb-466d-bb3a-b1392c04828e"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/08bd793a-fd0a-4eac-8c87-318454d51775"/></td>
+      <td><img src="https://github.com/user-attachments/assets/effa3a58-2a7f-44b9-8c0f-9efa06d14e24"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/f4a1a6b3-29e7-4d70-b824-d4828f1e8a08"/></td>
+      <td><img src="https://github.com/user-attachments/assets/d16d67f6-5de7-4eb0-bc84-b7ee37107a7a"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/9d673e27-a9ac-4815-895b-57df6127c011"/></td>
+      <td><img src="https://github.com/user-attachments/assets/77809ba9-6a8e-480c-a08e-5ffa7a7ac593"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/a80c5a2c-66af-4af5-b48a-eb6c8ba0bfd3"/></td>
+      <td><img src="https://github.com/user-attachments/assets/8246676c-3ea4-461f-b675-96c8381e2d11"/></td>
   </tr>
 </table>
 <br>

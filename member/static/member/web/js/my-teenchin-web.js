@@ -707,6 +707,10 @@ teenchinshowadd.addEventListener("click", async (e)=>{
             await teenchinService.getList(member_id, 1,status_teenchin,search, add_showList).then((text) => {
                 teenchinshowadd.innerHTML = text;
             });
+            await teenchinService.getList(member_id, 1,status_teenchin,search, showList).then((text) => {
+                teenchinshow.innerHTML = text;
+            });
+            page = 1
 
         })
     }
@@ -721,6 +725,10 @@ teenchinshowadd.addEventListener("click", async (e)=>{
             await teenchinService.getList(member_id, 1,status_teenchin,search, add_showList).then((text) => {
                 teenchinshowadd.innerHTML = text;
             });
+            await teenchinService.getList(member_id, 1,status_teenchin,search, showList).then((text) => {
+                teenchinshow.innerHTML = text;
+            });
+            page = 1
         } )
 
     }
@@ -744,6 +752,9 @@ teenchinshow.addEventListener("click", async (e)=>{
                 teenchinshow.innerHTML = text;
             });
             page = 1
+            await teenchinService.getList(member_id, page, status_teenchin, search, add_showList).then((text) => {
+            teenchinshowadd.innerHTML += text;
+            })
         } )
 
 
@@ -762,6 +773,9 @@ teenchinshow.addEventListener("click", async (e)=>{
             await teenchinService.getList(member_id, page,).then((teenchin) => {
             if (teenchin.length === 0){
             cansleButton.style.display = "none";}})
+            await teenchinService.getList(member_id, page, status_teenchin, search, add_showList).then((text) => {
+            teenchinshowadd.innerHTML += text;
+            })
         })
          teenchinModalChangedBtn.addEventListener("click", async(e) =>{
             teenchinService.update(update)
@@ -769,6 +783,9 @@ teenchinshow.addEventListener("click", async (e)=>{
                 teenchinshow.innerHTML = text;
             });
             page = 1
+             await teenchinService.getList(member_id, page, status_teenchin, search, add_showList).then((text) => {
+            teenchinshowadd.innerHTML += text;
+            })
         })
     }if(e.target.classList[0] === 'teenchin-wait-btn'){
         const update = e.target.classList[1]
@@ -782,6 +799,9 @@ teenchinshow.addEventListener("click", async (e)=>{
                 teenchinshow.innerHTML = text;
             });
             page = 1
+            await teenchinService.getList(member_id, page, status_teenchin, search, add_showList).then((text) => {
+            teenchinshowadd.innerHTML += text;
+            })
         })
     }if(e.target.classList[0] === 'send-letter-btn'){
         const receiver = e.target.classList[1]
@@ -798,6 +818,9 @@ teenchinshow.addEventListener("click", async (e)=>{
                 teenchinshow.innerHTML = text;
             });
             page = 1
+            await teenchinService.getList(member_id, page, status_teenchin, search, add_showList).then((text) => {
+            teenchinshowadd.innerHTML += text;
+            })
 
         })
     }

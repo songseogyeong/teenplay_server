@@ -194,70 +194,67 @@ class ActivityCreateWebView(View):
             return redirect(f'/activity/create?club_id={club.id}')
 
 
+def remove_html_tags(text):
+    # 정규표현식을 사용하여 HTML 태그를 찾습니다.
+    clean = re.compile('<.*?>')
+    # 태그를 빈 문자열로 대체합니다.
+    return re.sub(clean, '', text)
 
-class ActivityDetailWebView(View):
 
-    @staticmethod
-    def remove_html_tags(text):
-        # 정규표현식을 사용하여 HTML 태그를 찾습니다.
-        clean = re.compile('<.*?>')
-        # 태그를 빈 문자열로 대체합니다.
-        return re.sub(clean, '', text)
+def remove_special_characters_except_spaces(text):
+    """
+    주어진 텍스트에서 숫자, 한글, 영어 알파벳을 제외한 모든 특수문자 및 기호를 제거하고,
+    공백은 유지합니다.
 
-    @staticmethod
-    def remove_special_characters_except_spaces(text):
-        """
-        주어진 텍스트에서 숫자, 한글, 영어 알파벳을 제외한 모든 특수문자 및 기호를 제거하고,
-        공백은 유지합니다.
+    :param text: 특수문자 및 기호를 포함한 문자열
+    :return: 특수문자 및 기호가 제거된 문자열 (공백 유지)
+    """
+    # 정규표현식을 사용하여 숫자, 한글, 영어 알파벳, 공백을 제외한 모든 문자를 찾습니다.
+    clean = re.compile('[^0-9a-zA-Zㄱ-ㅎ가-힣ㅏ-ㅣ ]')
+    # 특수문자 및 기호를 빈 문자열로 대체합니다.
+    return re.sub(clean, ' ', text)
 
-        :param text: 특수문자 및 기호를 포함한 문자열
-        :return: 특수문자 및 기호가 제거된 문자열 (공백 유지)
-        """
-        # 정규표현식을 사용하여 숫자, 한글, 영어 알파벳, 공백을 제외한 모든 문자를 찾습니다.
-        clean = re.compile('[^0-9a-zA-Zㄱ-ㅎ가-힣ㅏ-ㅣ ]')
-        # 특수문자 및 기호를 빈 문자열로 대체합니다.
-        return re.sub(clean, ' ', text)
+# 활동 데이터프레임 생성
+activities = Activity.enabled_objects.annotate(
+    category_name=F('category__category_name')
+).values(
+    'activity_title',
+    'activity_content',
+    'activity_intro',
+    'activity_address_location',
+    'id',
+    'category_name'
+)
 
-    # 활동 데이터프레임 생성
-    activities = Activity.enabled_objects.annotate(
-        category_name=F('category__category_name')
-    ).values(
-        'activity_title',
-        'activity_content',
-        'activity_intro',
-        'activity_address_location',
-        'id',
-        'category_name'
+# activity_data 리스트에 필요한 필드 값을 추가합니다.
+activity_data = []
+for activity in activities:
+    activity_data.append(
+        (
+            activity['activity_title'],
+            activity['activity_content'],
+            activity['activity_intro'],
+            activity['activity_address_location'],
+            activity['category_name'],
+            activity['id']
+        )
     )
 
-    # activity_data 리스트에 필요한 필드 값을 추가합니다.
-    activity_data = []
-    for activity in activities:
-        activity_data.append(
-            (
-                activity['activity_title'],
-                activity['activity_content'],
-                activity['activity_intro'],
-                activity['activity_address_location'],
-                activity['category_name'],
-                activity['id']
-            )
-        )
+a_df = pd.DataFrame(activity_data, columns=['activity_title', 'activity_content', 'activity_intro', 'activity_address_location', 'category_name', 'id'])
+a_df.activity_content = a_df.activity_content.apply(remove_html_tags)
+a_df.activity_content = a_df.activity_content.apply(lambda x: x.replace("\"", ""))
+a_df['feature'] = a_df['activity_title'] + ' ' + a_df['activity_content'] + ' ' + a_df['activity_intro'] + ' ' + a_df['activity_address_location'] + ' ' + a_df['category_name']
+a_df.feature = a_df.feature.apply(lambda x: remove_special_characters_except_spaces(x).replace("나만의", " ").replace("원데이 클래스", " "))
+result_df = a_df.feature
 
-    a_df = pd.DataFrame(activity_data, columns=['activity_title', 'activity_content', 'activity_intro', 'activity_address_location', 'category_name', 'id'])
-    a_df.activity_content = a_df.activity_content.apply(remove_html_tags)
-    a_df.activity_content = a_df.activity_content.apply(lambda x: x.replace("\"", ""))
-    a_df['feature'] = a_df['activity_title'] + ' ' + a_df['activity_content'] + ' ' + a_df['activity_intro'] + ' ' + a_df['activity_address_location'] + ' ' + a_df['category_name']
-    a_df.feature = a_df.feature.apply(remove_special_characters_except_spaces).replace("나만의", " ").str.replace("원데이 클래스", " ")
-    result_df = a_df.feature
-
+class ActivityDetailWebView(View):
     @staticmethod
     def get_index_from_title(title):
-        return ActivityDetailWebView.a_df[ActivityDetailWebView.a_df.feature == title].index[0]
+        return a_df[a_df.feature == title].index[0]
 
     @staticmethod
     def get_title_from_index(index):
-        return ActivityDetailWebView.a_df[ActivityDetailWebView.a_df.index == index]['activity_title'].values[0]
+        return a_df[a_df.index == index]['activity_title'].values[0]
 
 
     # 활동 상세페이지로 이동하는 메소드입니다.
@@ -275,24 +272,24 @@ class ActivityDetailWebView(View):
         member_id = request.session['member']['id']
         member = Member.enabled_objects.get(id=member_id)
 
-        # 회원에 맞는 활동 추천 ai 모델을 불러옵니다.
-        model_file_name = member.member_recommended_activity_model
-
-        # path
-        model_file_path = os.path.join(Path(__file__).resolve().parent.parent, model_file_name)
-
-        # pkl 파일을 열어 객체 로드
-        model = joblib.load(model_file_path)
-
-        # 불러온 ai 모델에 추가 fit을 진행합니다.
-        additional_X_train = [activity.category.category_name + activity.activity_title + activity.activity_intro + activity.activity_address_location]
-        additional_y_train = [activity.category.id]
-
-        additional_X_train_transformed = model.named_steps['count_v'].transform(additional_X_train)
-        model.named_steps['mnnb'].partial_fit(additional_X_train_transformed, additional_y_train, classes=[i for i in range(1, 14)])
-
-        # fit이 완료된 모델을 다시 같은 경로에 같은 이름으로 내보내줍니다.
-        joblib.dump(model, member.member_recommended_activity_model)
+        # # 회원에 맞는 활동 추천 ai 모델을 불러옵니다.
+        # model_file_name = member.member_recommended_activity_model
+        #
+        # # path
+        # model_file_path = os.path.join(Path(__file__).resolve().parent.parent, model_file_name)
+        #
+        # # pkl 파일을 열어 객체 로드
+        # model = joblib.load(model_file_path)
+        #
+        # # 불러온 ai 모델에 추가 fit을 진행합니다.
+        # additional_X_train = [activity.category.category_name + activity.activity_title + activity.activity_intro + activity.activity_address_location]
+        # additional_y_train = [activity.category.id]
+        #
+        # additional_X_train_transformed = model.named_steps['count_v'].transform(additional_X_train)
+        # model.named_steps['mnnb'].partial_fit(additional_X_train_transformed, additional_y_train, classes=[i for i in range(1, 14)])
+        #
+        # # fit이 완료된 모델을 다시 같은 경로에 같은 이름으로 내보내줍니다.
+        # joblib.dump(model, member.member_recommended_activity_model)
 
         # 해당 활동의 구성원 수를 Queryset 객체의 count() 메소드를 통해 조회합니다.
         activity_member_count = ActivityMember.enabled_objects.filter(activity_id=activity_id).count()
@@ -317,7 +314,7 @@ class ActivityDetailWebView(View):
         # AI서비스 : 현재 페이지의 활동과 비슷한 활동들을 추천해줍니다.
         # 추천 활동 목록에 표시할 활동들을 가져옵니다.
         count_v = CountVectorizer()
-        count_metrix = count_v.fit_transform(ActivityDetailWebView.result_df)
+        count_metrix = count_v.fit_transform(result_df)
         c_s = cosine_similarity(count_metrix)
 
         detail_title = activity.activity_title
@@ -325,9 +322,9 @@ class ActivityDetailWebView(View):
         detail_intro = activity.activity_intro
         detail_category = category.category_name
         detail_address = activity.activity_address_location
-        remove_result = self.remove_html_tags(detail_title) + ' ' + self.remove_html_tags(detail_content) + ' ' + self.remove_html_tags(detail_intro) +' ' +   self.remove_html_tags(detail_address) +' ' +  self.remove_html_tags(detail_category)
+        remove_result = remove_html_tags(detail_title) + ' ' + remove_html_tags(detail_content) + ' ' + remove_html_tags(detail_intro) +' ' +   remove_html_tags(detail_address) +' ' +  remove_html_tags(detail_category)
         remove_result = remove_result.replace("나만의", " ").replace("원데이 클래스", " ")
-        similar_title = self.remove_special_characters_except_spaces(remove_result).replace("나만의", "").replace("원데이 클래스", "")
+        similar_title = remove_special_characters_except_spaces(remove_result).replace("나만의", "").replace("원데이 클래스", "")
         similar_index = self.get_index_from_title(similar_title)
         similar_activity_result = sorted(list(enumerate(c_s[similar_index])), key=lambda x: x[1], reverse=True)
 
@@ -401,26 +398,26 @@ class ActivityLikeAPI(APIView):
             member = Member.enabled_objects.get(id=member_id)
             activity = Activity.enabled_objects.get(id=activity_id)
 
-            # 회원에 맞는 활동 추천 ai 모델을 불러옵니다.
-            model_file_name = member.member_recommended_activity_model
-
-            # path
-            model_file_path = os.path.join(Path(__file__).resolve().parent.parent, model_file_name)
-
-            # pkl 파일을 열어 객체 로드
-            model = joblib.load(model_file_path)
-
-            # 불러온 ai 모델에 추가 fit을 진행합니다.
-            additional_X_train = [
-                activity.category.category_name + activity.activity_title + activity.activity_intro + activity.activity_address_location]
-            additional_y_train = [activity.category.id]
-
-            additional_X_train_transformed = model.named_steps['count_v'].transform(additional_X_train)
-            model.named_steps['mnnb'].partial_fit(additional_X_train_transformed, additional_y_train,
-                                                  classes=[i for i in range(1, 14)])
-
-            # fit이 완료된 모델을 다시 같은 경로에 같은 이름으로 내보내줍니다.
-            joblib.dump(model, member.member_recommended_activity_model)
+            # # 회원에 맞는 활동 추천 ai 모델을 불러옵니다.
+            # model_file_name = member.member_recommended_activity_model
+            #
+            # # path
+            # model_file_path = os.path.join(Path(__file__).resolve().parent.parent, model_file_name)
+            #
+            # # pkl 파일을 열어 객체 로드
+            # model = joblib.load(model_file_path)
+            #
+            # # 불러온 ai 모델에 추가 fit을 진행합니다.
+            # additional_X_train = [
+            #     activity.category.category_name + activity.activity_title + activity.activity_intro + activity.activity_address_location]
+            # additional_y_train = [activity.category.id]
+            #
+            # additional_X_train_transformed = model.named_steps['count_v'].transform(additional_X_train)
+            # model.named_steps['mnnb'].partial_fit(additional_X_train_transformed, additional_y_train,
+            #                                       classes=[i for i in range(1, 14)])
+            #
+            # # fit이 완료된 모델을 다시 같은 경로에 같은 이름으로 내보내줍니다.
+            # joblib.dump(model, member.member_recommended_activity_model)
 
             # 아래 코드로 내려가지 않도록 return해줍니다.
             return Response("added")

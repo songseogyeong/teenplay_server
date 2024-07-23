@@ -26,6 +26,8 @@ from teenplay_server.category import Category
 from teenplay_server.models import Region
 from wishlist.models import WishlistReply, Wishlist
 import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 def get_member_wishlist_data():
     with connection.cursor() as cursor:
@@ -42,9 +44,6 @@ class member_id_target():
 
         data = get_member_wishlist_data()
         result_df = data.wishlist_content
-
-        from sklearn.feature_extraction.text import CountVectorizer
-        from sklearn.metrics.pairwise import cosine_similarity
 
         count_v = CountVectorizer()
         count_metrix = count_v.fit_transform(result_df)

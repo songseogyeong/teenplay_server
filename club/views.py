@@ -84,21 +84,19 @@ class ClubCreateView(View):
         # 모임 상세보기 이동은 간단한 url이기 때문에 Model Convention의 def get_absolute_url()을 정의하고 사용
         return redirect(club.get_absolute_url())
 
+def clean_text(text):
+    # 문자열로 변환한 후 특수 문자와 줄 바꿈 문자를 제거하고 단일 공백으로 변환하며, 앞뒤 공백을 제거
+    return re.sub(r'[^\w\s]+', '', text).replace('\n', '').replace('\r', ' ').strip()
+
+
+def process_club_data(club):
+    # Club 객체의 데이터를 정규 표현식을 사용하여 클린한 후 리스트로 반환
+    text = ' '.join(club)
+    features = clean_text(text)
+    return features
 
 class ClubDetailView(View):
     def get(self, request):
-        @staticmethod
-        def clean_text(text):
-            # 문자열로 변환한 후 특수 문자와 줄 바꿈 문자를 제거하고 단일 공백으로 변환하며, 앞뒤 공백을 제거
-            return re.sub(r'[^\w\s]+', '', text).replace('\n', '').replace('\r', ' ').strip()
-
-        @staticmethod
-        def process_club_data(club):
-            # Club 객체의 데이터를 정규 표현식을 사용하여 클린한 후 리스트로 반환
-            text = ' '.join(club)
-            features = clean_text(text)
-            return features
-
         club_id = request.GET['id']
         # 상세보기로 이동 시 공지사항, 틴플레이 더보기를 클릭 해서 왔을 경우 바로 해당 정보를 보여주기 위한 구분점
         view = request.GET.get('view', 'activity')
