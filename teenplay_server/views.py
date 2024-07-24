@@ -215,6 +215,8 @@ class AdminMessageAPI(APIView):
 
         # context에 필드 담기
         context = {
+            'type': type,
+            'keyword': keyword,
             'category': category,
             'total': total,
             'order': order,

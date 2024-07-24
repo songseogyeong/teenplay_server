@@ -149,4 +149,49 @@
       <td><img src="https://github.com/user-attachments/assets/8246676c-3ea4-461f-b675-96c8381e2d11"/></td>
   </tr>
 </table>
+
 <br>
+<br>
+<br>
+<br>
+
+### 🛠️Flow Charts
+
+<table style="text-align: center">
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/2fb78e88-cda4-43a7-9cb0-fe0595bc6c01"/></td>
+      <td><img src="https://github.com/user-attachments/assets/e8cbfef5-11a9-435a-8251-117397c6c965"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/2fc49990-ecc2-4e48-9ea9-307dfc55577f"/></td>
+      <td><img src="https://github.com/user-attachments/assets/33c72b06-0131-4fe8-8969-2ac1f2935402"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/18b290f9-1783-4e49-a98f-0d5a0ec3c892"/></td>
+      <td><img src="https://github.com/user-attachments/assets/cb02e13f-a06b-4b8a-a33a-861b884a2a74"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/6def032f-2447-4358-a190-5a06b040d12d"/></td>
+      <td><img src="https://github.com/user-attachments/assets/2297602f-db16-414d-b856-ffb751a793a7"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/6ecc189c-787e-4fd2-bf75-83d5b1d5012e"/></td>
+      <td><img src="https://github.com/user-attachments/assets/87654203-848a-4adf-a2a9-30355877a154"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/bc1b7d58-dfe4-4281-9734-e5aadb07acd2"/></td>
+      <td><img src="https://github.com/user-attachments/assets/d6759c81-e733-4798-8f08-733ec147c300"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/fb5cf162-bc0c-4e04-96a9-86d516c04545"/></td>
+      <td><img src="https://github.com/user-attachments/assets/ebcbc746-1cd5-49da-bc2e-f6232d390589"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/ab9f9f27-aaa6-46ae-8718-ec3f5a993b56"/></td>
+      <td><img src="https://github.com/user-attachments/assets/0c6f55c7-4157-4ac1-84de-4e17b1dd059d"/></td>
+  </tr>
+  <tr>
+      <td><img src="https://github.com/user-attachments/assets/10d324b4-3b68-4254-8637-3f7b148a100c"/></td>
+      <td><img src=""/></td>
+  </tr>
+</table>
