@@ -694,9 +694,10 @@ class AdminFestivalView(View):
         return render(request, 'admin/web/festival-list-web.html')
 
 class AdminFestivalPaginationAPI(APIView):
-    def get(self, request, page):
+    def post(self, request, page):
         order = request.GET.get('order', 'recent')
         keyword = request.GET.get('keyword', '')
+        type = request.GET.get('type', '')
         targetId = request.GET.get('targetId', '')
 
         row_count = 10
@@ -727,6 +728,8 @@ class AdminFestivalPaginationAPI(APIView):
             end_page = 1
 
         context = {
+            'type': type,
+            'keyword': keyword,
             'total': total,
             'order': order,
             'start_page': start_page,
@@ -766,9 +769,9 @@ class AdminFestivalPaginationAPI(APIView):
         return Response(context)
 
 # 관리자 축제 - 데이터 삭제
-class AdminFestivalUpdateAPI(APIView):
+class AdminFestivalDeleteAPI(APIView):
     @transaction.atomic
-    def patch(self, request, festival_id):
+    def delete(self, request, festival_id):
         print("축제 늗널마ㅓㅏㅁㄴ")
         print(festival_id)
         print(request.data['festival_id'])
@@ -887,7 +890,6 @@ class AdminNoticePaginationAPI(APIView):
 class AdminNoticeUpdateAPI(APIView):
     # 공지사항 수정
     def post(self, request, notice_id):
-        print('들어옴')
         data = request.data
 
         title = data.get('title', '')

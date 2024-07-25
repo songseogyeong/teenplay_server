@@ -26,7 +26,7 @@ from teenplay_server.views import AdminLoginView, AdminUserView, CompanyIntroduc
     AdminNoticePaginationAPI, AdminWishlistAPI, AdminNoticeUpdateAPI, AdminUserAPI, \
     AdminCommentAPI, AdminCommentDeleteAPI, AdminActivityAPI, AdminActivityDeleteAPI, AdminPromoteAPI, \
     AdminPromoteDeleteAPI, AdminMessageAPI, \
-    AdminWishlistDeleteAPI, AdminMeetingAPI, AdminMeetingDeleteAPI, AdminFestivalPaginationAPI, AdminFestivalUpdateAPI, \
+    AdminWishlistDeleteAPI, AdminMeetingAPI, AdminMeetingDeleteAPI, AdminFestivalPaginationAPI, AdminFestivalDeleteAPI, \
     AdminFestivalWriteView, AdminLogoutView
 
 
@@ -96,7 +96,7 @@ urlpatterns = [
     # 관리자 - 축제 관리
     path('admin/festival/', AdminFestivalView.as_view(), name='admin-festival'),
     path('admin/festivals/<int:page>/', AdminFestivalPaginationAPI.as_view(), name='admin-festival-page-api'),
-    path('admin/festivals/delete/<int:festival_id>/', AdminFestivalUpdateAPI.as_view(), name='admin-festival-delete-api'),
+    path('admin/festivals/delete/<int:festival_id>/', AdminFestivalDeleteAPI.as_view(), name='admin-festival-delete-api'),
     path('admin/festival/write/', AdminFestivalWriteView.as_view(), name='admin-festival-write'),
     # 관리자 - 공지사항 관리
     path('admin/notice/', AdminNoticeView.as_view(), name='admin-notice'),
