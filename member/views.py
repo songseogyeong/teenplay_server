@@ -1,6 +1,7 @@
 import math
 import os
 from pathlib import Path
+from datetime import datetime
 
 import joblib
 from bootpay_backend import BootpayBackend
@@ -133,11 +134,49 @@ class MemberJoinWebView(View):
         # 1. 활동 추천 ai 모델
         model_path = os.path.join(Path(__file__).resolve().parent.parent, 'ai/ai/activity_recommender.pkl')
         model = joblib.load(model_path)
-        member_model_path = f'ai/2024/05/20/activity_model{member.id}.pkl'
+        # 현재 날짜를 'YYYY/MM/DD' 형식으로 가져오기
+        activity_current_date = datetime.now().strftime('%Y/%m/%d')
+        member_model_path = f'ai/{activity_current_date}/activity/activity_model{member.id}.pkl'
         os.makedirs(os.path.dirname(member_model_path), exist_ok=True)
         joblib.dump(model, member_model_path)
         member.member_recommended_activity_model = member_model_path
         member.save(update_fields=['member_recommended_activity_model'])
+
+        # 2. 모임 추천 ai 모델
+        # 사전 학습 모델의 경로를 담기
+        club_model_path = os.path.join(Path(__file__).resolve().parent.parent, 'ai/ai/club.pkl')
+        # 지정된 경로를 통해 사전 학습 모델 가져오기
+        club_model = joblib.load(club_model_path)
+        # 현재 날짜를 'YYYY/MM/DD' 형식으로 가져오기
+        club_current_date = datetime.now().strftime('%Y/%m/%d')
+        # 회원 별 훈련 모델 경로 지정 (회원이 생성된 시점에 맞춰 경로 생성)
+        member_club_model_path = f'ai/{club_current_date}/club/club_model{member.id}.pkl'
+        # 회원 별 훈련 모델을 저장할 디렉토리 생성(이미 존재하는 경우 생략)
+        os.makedirs(os.path.dirname(member_club_model_path), exist_ok=True)
+        # 사전 훈련 모델을 회원 별 훈련 모델 저장 디렉토리에 복사
+        joblib.dump(club_model, member_club_model_path)
+        # 회원 객체에 회원 별 훈련 모델 경로를 업데이트
+        member.member_recommended_club_model = member_club_model_path
+        # 회원 객체를 저장하여 데이터베이스에 반영
+        member.save(update_fields=['member_recommended_club_model'])
+
+        # 3. teenplay 추천 ai 모델
+        # 사전 학습 모델의 경로를 담기
+        teenplay_model_path = os.path.join(Path(__file__).resolve().parent.parent, 'ai/ai/rfc_default_model.pkl')
+        # 지정된 경로를 통해 사전 학습 모델 가져오기
+        teenplay_model = joblib.load(teenplay_model_path)
+        # 현재 날짜를 'YYYY/MM/DD' 형식으로 가져오기
+        teenplay_current_date = datetime.now().strftime('%Y/%m/%d')
+        # 회원 별 훈련 모델 경로 지정 (회원이 생성된 시점에 맞춰 경로 생성)
+        member_teenplay_model_path = f'ai/{teenplay_current_date}/teenplay/teenplay_model{member.id}.pkl'
+        # 회원 별 훈련 모델을 저장할 디렉토리 생성(이미 존재하는 경우 생략)
+        os.makedirs(os.path.dirname(member_teenplay_model_path), exist_ok=True)
+        # 사전 훈련 모델을 회원 별 훈련 모델 저장 디렉토리에 복사
+        joblib.dump(teenplay_model, member_teenplay_model_path)
+        # 회원 객체에 회원 별 훈련 모델 경로를 업데이트
+        member.member_recommended_teenplay_model = member_teenplay_model_path
+        # 회원 객체를 저장하여 데이터베이스에 반영
+        member.save(update_fields=['member_recommended_teenplay_model'])
 
         # member에 담긴 객체를 직렬화하여 member에 다시 담아줍니다.
         member = MemberSerializer(member).data
