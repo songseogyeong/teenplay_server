@@ -2,7 +2,6 @@
 const adminUserService = (() => {
     // 페이지 가져오기
     const getPagination = async (page, category, keyword, callback) => {
-        console.log(category)
         const response = await fetch(`/admin/users/${page}/`, {
             method: 'POST',
             headers: {

@@ -70,6 +70,7 @@ class AdminUserView(View):
 # 관리자 유저 - 데이터 가져오기
 class AdminUserAPI(APIView):
     def post(self, request, page):
+        # 응답받은 데이터를 data 변수로 선언
         data = request.data
 
         order = data.get('order', 'recent')
@@ -82,6 +83,7 @@ class AdminUserAPI(APIView):
         limit = page * row_count
 
         condition = Q(status=1) | Q(status=-1)
+
         if category:
             condition &= Q(status=category)
 
@@ -129,14 +131,17 @@ class AdminUserAPI(APIView):
         activity_count = members.values('id').annotate(activity_count=Count('activitymember', filter=Q(activitymember__status=1)))
         activity_club_count = members.values('id').annotate(activity_club_count=Count('club__activity', filter=Q(club__activity__status=1)))
 
-        for i in range(len(list(members))):
+        for i in range(len(list(members[offset:limit]))):
             members[i]['club_count'] = club_count[i]['club_count']
             members[i]['club_action_count'] = club_action_count[i]['club_action_count']
             members[i]['activity_count'] = activity_count[i]['activity_count'] + activity_club_count[i]['activity_club_count']
+            print('why')
 
-        context['members'] = list(members[offset:limit])
+        print('하잉')
 
-        return Response(context)
+        context['members'] = list(members)
+
+        return Response(context['members'])
 
 
 # 관리자 유저 - 상태 변경

@@ -10,7 +10,6 @@ const CreateService = (() => {
         console.log(pagination)
         let text = ``;
         pagination.letter.forEach((page) => {
-
             text += `
                 <li class="main-message-list" data-id="${page.id}">
                     <div class="main-comment-list-check">

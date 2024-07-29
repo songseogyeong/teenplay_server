@@ -47,7 +47,7 @@ class IntConverter:
 urlpatterns = [
     # ai 서비스
     path('ai/api/', include('ai.urls')),
-    path('admin/', admin.site.urls),
+    # path('admin/', admin.site.urls),
     path('club/', include('club.urls-web')),
     path('clubs/', include('club.urls-web')),
     path('app/club/', include('club.urls-app')),
