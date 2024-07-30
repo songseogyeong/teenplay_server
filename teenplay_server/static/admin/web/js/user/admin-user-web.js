@@ -8,7 +8,7 @@ const CreateService = (() => {
     const showList = (pagination) => {
         let text = ``;
         console.log(pagination)
-        pagination.members.forEach((page) => {
+        pagination.forEach((page) => {
             text += `
                 <li class="main-user-list" data-id="${page.id}">
                     <div class="main-user-list-check">
