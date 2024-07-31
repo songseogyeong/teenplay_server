@@ -7,8 +7,7 @@ let totalCountNumber = 0
 const CreateService = (() => {
     const showList = (pagination) => {
         let text = ``;
-        console.log(pagination)
-        pagination.forEach((page) => {
+        pagination.members.forEach((page) => {
             text += `
                 <li class="main-user-list" data-id="${page.id}">
                     <div class="main-user-list-check">
@@ -141,7 +140,7 @@ const CreateService = (() => {
     // 유저 명수 표기 텍스트
     const CountText = (pagination) => {
         let text = ``;
-        text += pagination.total
+        text += pagination.members_count
         totalCountNumber = text;
 
         return text;
@@ -159,7 +158,6 @@ const userData = document.querySelector(".user-data")
 // 목록 보여주기
 function allShowList() {
     adminUserService.getPagination(page, category, keyword, CreateService.showList).then((text) => {
-        console.log(CreateService.showList)
         userData.innerHTML = text;
     })
 }

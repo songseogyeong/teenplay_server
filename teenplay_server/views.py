@@ -126,22 +126,24 @@ class AdminUserAPI(APIView):
 
         members = Member.objects.filter(condition).values(*columns).order_by(ordering)
 
+        members_count = members.count()
+        context['members_count'] = members_count
+
+        members = members[offset:limit]
+
         club_count = members.values('id').annotate(club_count=Count('club'))
         club_action_count = members.values('id').annotate(club_action_count=Count('clubmember', filter=Q(clubmember__status=1)))
         activity_count = members.values('id').annotate(activity_count=Count('activitymember', filter=Q(activitymember__status=1)))
         activity_club_count = members.values('id').annotate(activity_club_count=Count('club__activity', filter=Q(club__activity__status=1)))
 
-        for i in range(len(list(members[offset:limit]))):
+        for i in range(len(members)):
             members[i]['club_count'] = club_count[i]['club_count']
             members[i]['club_action_count'] = club_action_count[i]['club_action_count']
             members[i]['activity_count'] = activity_count[i]['activity_count'] + activity_club_count[i]['activity_club_count']
-            print('why')
-
-        print('하잉')
 
         context['members'] = list(members)
 
-        return Response(context['members'])
+        return Response(context)
 
 
 # 관리자 유저 - 상태 변경
