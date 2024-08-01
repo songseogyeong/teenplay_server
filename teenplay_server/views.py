@@ -40,14 +40,17 @@ class AdminLoginView(View):
             'admin_password': data['admin_password']
         }
 
+        # 응답 받은 data가 데이터 베이스에 존재하는지 검사
         admin = AdminAccount.objects.filter(**data)
 
+        # 응답 받은 data가 데이터 베이스에 존재하지 않을 시 url를 로그인 페이지로 설정
         url = 'admin-login'
 
         if admin.exists():
             request.session['admin'] = AdminAccountSerializer(admin.first()).data
             url = 'admin-user'
 
+        # redirect를 통해 view로 접근하여 해당하는 페이지로 이동
         return redirect(url)
 
 
