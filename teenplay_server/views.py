@@ -56,7 +56,7 @@ class AdminLoginView(View):
             url = 'admin-login'
 
 
-        # 설정된 url로 redirect를 통해 view로 접근하여 해당하는 페이지로 이동
+        # redirect를 통해 view로 접근하여 해당하는 페이지로 이동
         return redirect(url)
 
 
@@ -66,8 +66,11 @@ class AdminLogoutView(View):
         # 로그아웃 시 session은 비우기
         request.session.clear()
 
+        # url를 로그인 페이지로 설정
+        url = 'admin-login'
+
         # redirect를 통해 view로 접근하여 로그인 페이지로 이동
-        return redirect('admin-login')
+        return redirect(url)
 
 
 # 관리자 유저 - 페이지 이동
