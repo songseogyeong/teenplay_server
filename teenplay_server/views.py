@@ -33,24 +33,30 @@ class AdminLoginView(View):
         # 응답받은 데이터를 data 변수로 선언
         data = request.POST
 
-        # 응답받은 각각의 데이터 값을 각 key에 담아 dict 객체로 만들기
-        # dict 객체는 data 변수에 담기
+        # 응답받은 각 데이터를 dict 객체로 변환
+        # 'admin_id'와 'admin_password' 값을 key로 사용
         data = {
             'admin_id': data['admin_id'],
             'admin_password': data['admin_password']
         }
 
-        # 응답 받은 data가 데이터 베이스에 존재하는지 검사
+        # 응답받은 데이터를 조건으로 admin 객체 생성
         admin = AdminAccount.objects.filter(**data)
 
-        # 응답 받은 data가 데이터 베이스에 존재하지 않을 시 url를 로그인 페이지로 설정
-        url = 'admin-login'
-
+        # 데이터베이스에서 응답받은 data가 존재하는지 확인
+        # 응답받은 data가 데이터 베이스에 존재할 경우
         if admin.exists():
+            # admin 계정을 세션에 저장
             request.session['admin'] = AdminAccountSerializer(admin.first()).data
+            # url를 관리자 페이지로 설정
             url = 'admin-user'
+        # 응답받은 data가 데이터베이스에 존재하지 않을 경우
+        else:
+            # url를 로그인 페이지로 설정
+            url = 'admin-login'
 
-        # redirect를 통해 view로 접근하여 해당하는 페이지로 이동
+
+        # 설정된 url로 redirect를 통해 view로 접근하여 해당하는 페이지로 이동
         return redirect(url)
 
 
