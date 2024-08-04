@@ -27,6 +27,7 @@ from wishlist.models import Wishlist, WishlistReply, WishlistTag
 class AdminLoginView(View):
     # 관리자 로그인 페이지 이동
     def get(self, request):
+        # 지정된 템플릿을 렌더링(render)하여 응답 변환
         return render(request, 'admin/web/admin-login-web.html')
 
     def post(self, request):
