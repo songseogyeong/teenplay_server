@@ -77,6 +77,7 @@ class AdminLogoutView(View):
 # 관리자 유저 - 페이지 이동
 class AdminUserView(View):
     def get(self, request):
+        # 지정된 템플릿을 렌더링(render)하여 응답 변환
         return render(request, 'admin/web/user-web.html')
 
 
