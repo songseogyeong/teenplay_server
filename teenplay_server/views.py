@@ -87,6 +87,7 @@ class AdminUserAPI(APIView):
         # 응답받은 데이터를 data 변수로 선언
         data = request.data
 
+        # 응답 받은 데이터 값을 가져오기 ('응답 값'. '기본값')
         order = data.get('order', 'recent')
         category = data.get('category', '')
         keyword = data.get('keyword', '')
