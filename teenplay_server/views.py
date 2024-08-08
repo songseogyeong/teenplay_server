@@ -92,6 +92,7 @@ class AdminUserAPI(APIView):
         category = data.get('category', '')
         keyword = data.get('keyword', '')
 
+        # 한 번에 보여질 데이터 개수를 row_count 변수로 선언
         row_count = 10
 
         offset = (page - 1) * row_count
