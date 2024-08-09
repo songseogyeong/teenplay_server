@@ -95,7 +95,9 @@ class AdminUserAPI(APIView):
         # 한 번에 보여질 데이터 개수를 row_count 변수로 선언
         row_count = 10
 
+        # 현재 페이지에 따라 데이터를 몇 개 건너뛸지 계산하여 offset 변수로 선언
         offset = (page - 1) * row_count
+        # 현재 페이지에서 마지막으로 가져올 데이터의 위치를 limit 변수로 선언
         limit = page * row_count
 
         condition = Q(status=1) | Q(status=-1)
