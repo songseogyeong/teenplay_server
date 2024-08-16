@@ -100,26 +100,35 @@ class AdminUserAPI(APIView):
         # 현재 페이지에서 마지막으로 가져올 데이터의 위치를 limit 변수로 선언
         limit = page * row_count
 
+        # 기본 검색 조건을 설정
+        # status가 1 또는 -1인 경우
         condition = Q(status=1) | Q(status=-1)
 
+        # category가 존재하면 검색 조건에 추가
         if category:
             condition &= Q(status=category)
 
+        # keyword가 존재하면 검색 조건에 추가
         if keyword:
             condition &= Q(member_nickname__contains=keyword)
 
+        # Member 객체에 접근하여 총 멤버 수를 계산
         total = Member.objects.filter(condition).all().count()
 
+        # 한 번에 보여줄 페이지 개수
         page_count = 5
 
+        # 시작 페이지와 끝 페이지를 계산
         end_page = math.ceil(page / page_count) * page_count
         start_page = end_page - page_count + 1
         real_end = math.ceil(total / row_count)
         end_page = real_end if end_page > real_end else end_page
 
+        # 만약 끝 페이지가 0이면 1로 설정
         if end_page == 0:
             end_page = 1
 
+        # context 딕셔너리에 필요한 정보를 저장
         context = {
             'category': category,
             'keyword': keyword,
@@ -131,10 +140,13 @@ class AdminUserAPI(APIView):
             'page_count': page_count,
         }
 
+        # 정렬 방식을 설정
+        # 기본적으로 'id'의 내림차순
         ordering = '-id'
         if order == 'popular':
             ordering = '-post_read_count'
 
+        # 필요한 컬럼의 이름을 리스트로 정의
         columns = [
             'id',
             'member_nickname',
@@ -142,25 +154,35 @@ class AdminUserAPI(APIView):
             'status'
         ]
 
+        # Member 객체를 조건에 맞게 필터링하고, 지정된 컬럼들을 선택하여 정렬
         members = Member.objects.filter(condition).values(*columns).order_by(ordering)
 
+        # 멤버 수를 계산
         members_count = members.count()
         context['members_count'] = members_count
 
+        # offset과 limit을 사용하여 멤버 목록을 슬라이싱
         members = members[offset:limit]
 
+        # 각 멤버의 클럽 수를 계산
         club_count = members.values('id').annotate(club_count=Count('club'))
+        # 각 멤버의 클럽 액션 수를 계산
         club_action_count = members.values('id').annotate(club_action_count=Count('clubmember', filter=Q(clubmember__status=1)))
+        # 각 멤버의 활동 수를 계산
         activity_count = members.values('id').annotate(activity_count=Count('activitymember', filter=Q(activitymember__status=1)))
+        # 각 멤버의 클럽 활동 수를 계산
         activity_club_count = members.values('id').annotate(activity_club_count=Count('club__activity', filter=Q(club__activity__status=1)))
 
+        # 멤버 목록을 순회하면서 각 멤버의 클럽 및 활동 수를 추가
         for i in range(len(members)):
             members[i]['club_count'] = club_count[i]['club_count']
             members[i]['club_action_count'] = club_action_count[i]['club_action_count']
             members[i]['activity_count'] = activity_count[i]['activity_count'] + activity_club_count[i]['activity_club_count']
 
+        # 최종적으로 context에 멤버 목록을 저장
         context['members'] = list(members)
 
+        # 최종 결과를 Response로 반환
         return Response(context)
 
 
